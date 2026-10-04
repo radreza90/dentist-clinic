@@ -1,0 +1,2 @@
+import {connectDB} from "@/lib/db"; import {ServiceModel} from "@/models"; import {ok,fail} from "@/lib/api";
+export async function GET(_:Request,{params}:{params:Promise<{slug:string}>}){try{await connectDB();const {slug}=await params;const item=await ServiceModel.findOne({slug,status:"published"}).lean();if(!item)return fail("Service not found",404);return ok(item);}catch(e){return fail(e instanceof Error?e.message:"Unable to load service",500);}}
