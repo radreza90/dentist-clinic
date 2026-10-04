@@ -142,7 +142,7 @@ export default function ServicesAdmin(){
           <textarea value={form.seo.description.fa} onChange={e=>setForm({...form,seo:{...form.seo,description:{...form.seo.description,fa:e.target.value}}})} placeholder="Meta description فارسی" rows={3}/>
           <textarea value={form.seo.description.en} onChange={e=>setForm({...form,seo:{...form.seo,description:{...form.seo.description,en:e.target.value}}})} placeholder="Meta description English" dir="ltr" rows={3}/>
           <input value={form.seo.canonical.fa} onChange={e=>setForm({...form,seo:{...form.seo,canonical:{...form.seo.canonical,fa:e.target.value}}})} placeholder="Canonical URL" dir="ltr"/>
-          <input value={form.seo.keywords} onChange={e=>setForm({...form,seo:{...form.seo,keywords:e.target.value})} placeholder="کلمات کلیدی، با ویرگول جدا کنید"/>
+          <input value={form.seo.keywords} onChange={e=>setForm({...form,seo:{...form.seo,keywords:e.target.value}})} placeholder="کلمات کلیدی، با ویرگول جدا کنید"/>
           <div style={{display:"flex",gap:20}}>
             <label><input type="checkbox" checked={form.seo.index} onChange={e=>setForm({...form,seo:{...form.seo,index:e.target.checked}})}/> Index</label>
             <label><input type="checkbox" checked={form.seo.follow} onChange={e=>setForm({...form,seo:{...form.seo,follow:e.target.checked}})}/> Follow</label>
