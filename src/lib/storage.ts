@@ -1,0 +1,3 @@
+import {mkdir,writeFile} from "node:fs/promises"; import path from "node:path"; import crypto from "node:crypto";
+const root=path.resolve(process.env.LOCAL_STORAGE_PATH||"./storage");
+export async function saveLocal(buffer:Buffer,originalName:string){const ext=path.extname(originalName).toLowerCase();const key=crypto.randomUUID()+ext;await mkdir(root,{recursive:true});await writeFile(path.join(root,key),buffer);return {key,url:"/media/"+key};}
