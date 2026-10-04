@@ -11,19 +11,14 @@ const Appointment=new Schema({
   slotKey:{type:String,required:true},
   customerNote:String,
   adminNote:String,
+  reminder24SentAt:Date,
+  reminder2SentAt:Date,
   status:{type:String,enum:["pending_payment","paid_pending_assignment","confirmed","completed","cancelled","no_show"],default:"pending_payment",index:true},
   paymentStatus:{type:String,enum:["unpaid","pending","paid","failed","refunded"],default:"unpaid"},
   source:{type:String,enum:["web","mobile","admin"],default:"web"}
 },{timestamps:true});
 
-Appointment.index(
-  {slotKey:1},
-  {
-    unique:true,
-    name:"uniq_active_appointment_slot",
-    partialFilterExpression:{status:{$in:["pending_payment","paid_pending_assignment","confirmed"]}}
-  }
-);
+Appointment.index({slotKey:1},{unique:true,name:"uniq_active_appointment_slot",partialFilterExpression:{status:{$in:["pending_payment","paid_pending_assignment","confirmed"]}}});
 
 const Payment=new Schema({
   appointmentId:{type:Schema.Types.ObjectId,ref:"Appointment",required:true,index:true},
