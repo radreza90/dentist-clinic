@@ -1,0 +1,2 @@
+import {connectDB} from "@/lib/db"; import {SiteSettingsModel} from "@/models"; import {getAuth,can} from "@/lib/rbac"; import {ok,fail} from "@/lib/api";
+export async function PUT(req:Request){const auth=await getAuth(req as never);if(!auth||!can(String(auth.role),"settings:read"))return fail("Forbidden",403);try{await connectDB();const body=await req.json();const item=await SiteSettingsModel.findOneAndUpdate({key:"main"},{$set:{...body,key:"main"}},{upsert:true,new:true});return ok(item);}catch(e){return fail(e instanceof Error?e.message:"Update failed",500);}}
