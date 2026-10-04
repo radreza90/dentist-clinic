@@ -1,2 +1,11 @@
-import {connectDB} from "@/lib/db"; import {ok,fail} from "@/lib/api";
-export async function GET(){try{await connectDB();return ok({status:"ok",database:"connected",version:"v1"});}catch(e){return fail(e instanceof Error?e.message:"Database unavailable",503);}}
+import { connectDB } from "@/lib/db";
+import { ok, fail } from "@/lib/api";
+
+export async function GET(){
+  try{
+    await connectDB();
+    return ok({status:"ok",database:"connected",version:"v1"});
+  }catch(e){
+    return fail(e instanceof Error?e.message:"Database unavailable",503);
+  }
+}
