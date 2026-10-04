@@ -1,0 +1,2 @@
+import { ContentEditor } from "../../ContentEditor";
+export default async function EditPage({params}:{params:Promise<{id:string}>}){const {id}=await params;return <ContentEditor kind="page" title="صفحه" endpoint="/api/v1/admin/pages" id={id}/>;}
