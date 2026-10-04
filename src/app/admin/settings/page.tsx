@@ -1,1 +1,27 @@
-export default function SettingsAdmin(){return <main><h1>تنظیمات کلینیک</h1><p>اطلاعات کلینیک، تماس، شبکه‌های اجتماعی، SEO، پیامک و درگاه پرداخت.</p></main>}
+"use client";
+
+import { FormEvent, useEffect, useState } from "react";
+
+type Settings={clinicName:{fa:string;en:string};description:{fa:string;en:string};phones:string[];whatsapp:string;address:{fa:string;en:string};latitude:number|null;longitude:number|null;socials:{instagram:string;whatsapp:string;telegram:string};timezone:string};
+const empty:Settings={clinicName:{fa:"",en:""},description:{fa:"",en:""},phones:[],whatsapp:"",address:{fa:"",en:""},latitude:null,longitude:null,socials:{instagram:"",whatsapp:"",telegram:""},timezone:"Asia/Tehran"};
+
+export default function SettingsAdmin(){
+  const [form,setForm]=useState<Settings>(empty);const [phoneInput,setPhoneInput]=useState("");const [loading,setLoading]=useState(true);const [saving,setSaving]=useState(false);const [message,setMessage]=useState("");const [error,setError]=useState("");
+  useEffect(()=>{fetch("/api/v1/admin/site",{cache:"no-store"}).then(r=>r.json()).then(p=>{if(p.success&&p.data)setForm({...empty,...p.data,clinicName:{...empty.clinicName,...p.data.clinicName},description:{...empty.description,...p.data.description},address:{...empty.address,...p.data.address},socials:{...empty.socials,...p.data.socials}});else if(!p.success)setError(p.error?.message||"خطا");}).catch(()=>setError("خطا در دریافت تنظیمات")).finally(()=>setLoading(false));},[]);
+  async function save(e:FormEvent){e.preventDefault();setSaving(true);setMessage("");setError("");try{const r=await fetch("/api/v1/admin/site",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});const p=await r.json();if(!r.ok||!p.success)throw new Error(p.error?.message||"ذخیره ناموفق بود");setMessage("تنظیمات ذخیره شد.");}catch(e){setError(e instanceof Error?e.message:"خطا");}finally{setSaving(false);}}
+  function addPhone(){const phone=phoneInput.trim();if(!phone||form.phones.includes(phone))return;setForm({...form,phones:[...form.phones,phone]});setPhoneInput("");}
+  if(loading)return <main><h1>تنظیمات کلینیک</h1><p>در حال بارگذاری…</p></main>;
+  return <main><h1>تنظیمات کلینیک</h1><p style={{color:"#666"}}>اطلاعات تماس، آدرس، شبکه‌های اجتماعی و منطقه زمانی.</p>
+    <form onSubmit={save} style={{display:"grid",gap:14,maxWidth:850}}>
+      <h2>نام کلینیک</h2><input value={form.clinicName.fa} onChange={e=>setForm({...form,clinicName:{...form.clinicName,fa:e.target.value}})} placeholder="نام فارسی"/><input value={form.clinicName.en} onChange={e=>setForm({...form,clinicName:{...form.clinicName,en:e.target.value}})} placeholder="English name" dir="ltr"/>
+      <h2>توضیحات</h2><textarea rows={3} value={form.description.fa} onChange={e=>setForm({...form,description:{...form.description,fa:e.target.value}})} placeholder="توضیحات فارسی"/><textarea rows={3} value={form.description.en} onChange={e=>setForm({...form,description:{...form.description,en:e.target.value}})} placeholder="English description" dir="ltr"/>
+      <h2>تلفن‌ها</h2><div style={{display:"flex",gap:8}}><input value={phoneInput} onChange={e=>setPhoneInput(e.target.value)} placeholder="شماره تماس" dir="ltr"/><button type="button" onClick={addPhone}>افزودن</button></div>
+      <div>{form.phones.map(phone=><span key={phone} style={{display:"inline-flex",gap:6,alignItems:"center",padding:"6px 10px",margin:4,border:"1px solid #ddd",borderRadius:20}}><span dir="ltr">{phone}</span><button type="button" onClick={()=>setForm({...form,phones:form.phones.filter(x=>x!==phone)})}>×</button></span>)}</div>
+      <input value={form.whatsapp} onChange={e=>setForm({...form,whatsapp:e.target.value})} placeholder="WhatsApp number" dir="ltr"/>
+      <h2>آدرس</h2><textarea rows={3} value={form.address.fa} onChange={e=>setForm({...form,address:{...form.address,fa:e.target.value}})} placeholder="آدرس فارسی"/><textarea rows={3} value={form.address.en} onChange={e=>setForm({...form,address:{...form.address,en:e.target.value}})} placeholder="English address" dir="ltr"/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}><input type="number" step="any" value={form.latitude??""} onChange={e=>setForm({...form,latitude:e.target.value===""?null:Number(e.target.value)})} placeholder="Latitude" dir="ltr"/><input type="number" step="any" value={form.longitude??""} onChange={e=>setForm({...form,longitude:e.target.value===""?null:Number(e.target.value)})} placeholder="Longitude" dir="ltr"/></div>
+      <h2>شبکه‌های اجتماعی</h2><input value={form.socials.instagram} onChange={e=>setForm({...form,socials:{...form.socials,instagram:e.target.value}})} placeholder="Instagram URL" dir="ltr"/><input value={form.socials.whatsapp} onChange={e=>setForm({...form,socials:{...form.socials,whatsapp:e.target.value}})} placeholder="WhatsApp URL" dir="ltr"/><input value={form.socials.telegram} onChange={e=>setForm({...form,socials:{...form.socials,telegram:e.target.value}})} placeholder="Telegram URL" dir="ltr"/><input value={form.timezone} onChange={e=>setForm({...form,timezone:e.target.value})} placeholder="Asia/Tehran" dir="ltr"/>
+      {message&&<p style={{color:"green"}}>{message}</p>}{error&&<p style={{color:"#b42318"}}>{error}</p>}<button type="submit" disabled={saving}>{saving?"در حال ذخیره…":"ذخیره تنظیمات"}</button>
+    </form>
+  </main>;
+}
