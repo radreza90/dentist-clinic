@@ -1,0 +1,1 @@
+export default function AppointmentsAdmin(){return <main><h1>مدیریت نوبت‌ها</h1><p>تقویم، پرداخت‌ها و نوبت‌های در انتظار تخصیص پزشک در این بخش قرار می‌گیرند.</p></main>}
