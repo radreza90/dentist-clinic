@@ -1,0 +1,2 @@
+import { ContentList } from "../../ContentList";
+export default function PortfolioCategoriesAdmin(){return <ContentList title="دسته‌بندی نمونه‌کارها" endpoint="/api/v1/admin/portfolio/categories" archive={false}/>;}
