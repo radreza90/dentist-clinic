@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PortfolioItemModel, MediaModel } from "@/models";
 import { Localized } from "@/components/i18n/Localized";
 
-export const revalidate=60;
+export const dynamic="force-dynamic";
 
 export default async function PortfolioPage(){
   const items=await PortfolioItemModel.find({status:"published"}).sort({createdAt:-1}).limit(50).lean();
