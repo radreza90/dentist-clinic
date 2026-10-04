@@ -1,0 +1,1 @@
+export default function Home(){return <main style={{padding:40,fontFamily:"sans-serif"}}><h1>Dental Clinic CMS</h1><p>API-first clinic platform is initialized.</p></main>}
