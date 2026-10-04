@@ -1,0 +1,1 @@
+export default function ContentAdmin(){return <main><h1>مدیریت محتوا</h1><ul><li>صفحات</li><li>پزشکان</li><li>خدمات</li><li>مقالات و دسته‌بندی‌ها</li><li>نمونه‌کارها</li></ul></main>}
