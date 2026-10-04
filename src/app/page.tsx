@@ -3,7 +3,7 @@ import { ServiceModel, DoctorModel, BlogPostModel, PortfolioItemModel, SiteSetti
 import { Localized } from "@/components/i18n/Localized";
 import { SiteFooter } from "@/components/site/SiteFooter";
 
-export const revalidate=60;
+export const dynamic="force-dynamic";
 
 export default async function Home(){
   const [site,services,doctors,posts,cases]=await Promise.all([
