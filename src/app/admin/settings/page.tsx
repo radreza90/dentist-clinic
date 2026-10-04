@@ -1,0 +1,1 @@
+export default function SettingsAdmin(){return <main><h1>تنظیمات کلینیک</h1><p>اطلاعات کلینیک، تماس، شبکه‌های اجتماعی، SEO، پیامک و درگاه پرداخت.</p></main>}
