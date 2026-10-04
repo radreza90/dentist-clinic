@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ServiceModel } from "@/models";
 import { Localized } from "@/components/i18n/Localized";
 
-export const revalidate=60;
+export const dynamic="force-dynamic";
 
 export default async function ServicesPage(){
   const services=await ServiceModel.find({status:"published"}).sort({createdAt:1}).lean();
