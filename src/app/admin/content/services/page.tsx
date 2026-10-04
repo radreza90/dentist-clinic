@@ -1,3 +1,4 @@
+/* generated admin page */
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
@@ -6,10 +7,7 @@ import { MediaPicker } from "@/components/editor/MediaPicker";
 
 type Localized={fa:string;en:string};
 type Service={_id:string;slug:string;title:Localized;excerpt?:Localized;status?:string;bookingFee?:number;currency?:string};
-type ServiceForm={
-  slug:string;title:Localized;excerpt:Localized;content:Localized;bookingFee:number;currency:string;coverMediaId:string|null;status:string;
-  seo:{title:Localized;description:Localized;canonical:Localized;keywords:string;index:boolean;follow:boolean};
-};
+type ServiceForm={slug:string;title:Localized;excerpt:Localized;content:Localized;bookingFee:number;currency:string;coverMediaId:string|null;status:string;seo:{title:Localized;description:Localized;canonical:Localized;keywords:string;index:boolean;follow:boolean}};
 
 const empty:ServiceForm={
   slug:"",title:{fa:"",en:""},excerpt:{fa:"",en:""},content:{fa:"",en:""},bookingFee:0,currency:"IRR",coverMediaId:null,status:"draft",
@@ -19,53 +17,91 @@ const empty:ServiceForm={
 export default function ServicesAdmin(){
   const [items,setItems]=useState<Service[]>([]);
   const [form,setForm]=useState<ServiceForm>(structuredClone(empty));
-  const [editing,setEditing]=useState<string|null>(null);const [loading,setLoading]=useState(true);const [saving,setSaving]=useState(false);
-  const [error,setError]=useState("");const [search,setSearch]=useState("");const [pickerOpen,setPickerOpen]=useState(false);const [coverUrl,setCoverUrl]=useState("");
+  const [editing,setEditing]=useState<string|null>(null);
+  const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
+  const [error,setError]=useState("");
+  const [search,setSearch]=useState("");
+  const [pickerOpen,setPickerOpen]=useState(false);
+  const [coverUrl,setCoverUrl]=useState("");
 
   const load=useCallback(async()=>{
-    setLoading(true);setError("");
+    setLoading(true);
+    setError("");
     try{
-      const q=search?"?search="+encodeURIComponent(search):"";const r=await fetch("/api/v1/admin/services"+q,{cache:"no-store"});const p=await r.json();
-      if(!r.ok||!p.success)throw new Error(p.error?.message||"خطا در دریافت خدمات");setItems(p.data.items);
-    }catch(e){setError(e instanceof Error?e.message:"خطا");}finally{setLoading(false);}
+      const q=search?"?search="+encodeURIComponent(search):"";
+      const r=await fetch("/api/v1/admin/services"+q,{cache:"no-store"});
+      const p=await r.json();
+      if(!r.ok||!p.success)throw new Error(p.error?.message||"خطا در دریافت خدمات");
+      setItems(p.data.items);
+    }catch(e){setError(e instanceof Error?e.message:"خطا");}
+    finally{setLoading(false);}
   },[search]);
+
   useEffect(()=>{void load();},[load]);
 
-  function reset(){setEditing(null);setForm(structuredClone(empty));setCoverUrl("");setError("");}
+  function reset(){
+    setEditing(null);
+    setForm(structuredClone(empty));
+    setCoverUrl("");
+    setError("");
+  }
 
   async function submit(e:FormEvent){
-    e.preventDefault();setSaving(true);setError("");
+    e.preventDefault();
+    setSaving(true);
+    setError("");
     try{
-      const body={
-        ...form,
-        seo:{...form.seo,keywords:form.seo.keywords.split(",").map(x=>x.trim()).filter(Boolean)},
-      };
-      const r=await fetch(editing?"/api/v1/admin/services/"+editing:"/api/v1/admin/services",{method:editing?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-      const p=await r.json();if(!r.ok||!p.success)throw new Error(p.error?.message||"ذخیره انجام نشد");
-      reset();await load();
-    }catch(err){setError(err instanceof Error?err.message:"خطا");}finally{setSaving(false);}
+      const body={...form,seo:{...form.seo,keywords:form.seo.keywords.split(",").map(x=>x.trim()).filter(Boolean),robots:{index:form.seo.index,follow:form.seo.follow}}};
+      const r=await fetch(editing?"/api/v1/admin/services/"+editing:"/api/v1/admin/services",{
+        method:editing?"PUT":"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(body)
+      });
+      const p=await r.json();
+      if(!r.ok||!p.success)throw new Error(p.error?.message||"ذخیره انجام نشد");
+      reset();
+      await load();
+    }catch(err){setError(err instanceof Error?err.message:"خطا");}
+    finally{setSaving(false);}
   }
 
   async function edit(item:Service){
     try{
-      const r=await fetch("/api/v1/admin/services/"+item._id,{cache:"no-store"});const p=await r.json();if(!r.ok||!p.success)throw new Error(p.error?.message||"خطا");
+      const r=await fetch("/api/v1/admin/services/"+item._id,{cache:"no-store"});
+      const p=await r.json();
+      if(!r.ok||!p.success)throw new Error(p.error?.message||"خطا");
       const d=p.data;
       setEditing(item._id);
       setForm({
-        slug:d.slug,title:d.title||{fa:"",en:""},excerpt:d.excerpt||{fa:"",en:""},content:d.content||{fa:"",en:""},
-        bookingFee:d.bookingFee||0,currency:d.currency||"IRR",coverMediaId:d.coverMediaId?String(d.coverMediaId):null,status:d.status||"draft",
+        slug:d.slug,
+        title:d.title||{fa:"",en:""},
+        excerpt:d.excerpt||{fa:"",en:""},
+        content:d.content||{fa:"",en:""},
+        bookingFee:d.bookingFee||0,
+        currency:d.currency||"IRR",
+        coverMediaId:d.coverMediaId?String(d.coverMediaId):null,
+        status:d.status||"draft",
         seo:{
-          title:d.seo?.title||{fa:"",en:""},description:d.seo?.description||{fa:"",en:""},canonical:d.seo?.canonical||{fa:"",en:""},
-          keywords:Array.isArray(d.seo?.keywords)?d.seo.keywords.join(", "):"",index:d.seo?.robots?.index!==false,follow:d.seo?.robots?.follow!==false
+          title:d.seo?.title||{fa:"",en:""},
+          description:d.seo?.description||{fa:"",en:""},
+          canonical:d.seo?.canonical||{fa:"",en:""},
+          keywords:Array.isArray(d.seo?.keywords)?d.seo.keywords.join(", "):"",
+          index:d.seo?.robots?.index!==false,
+          follow:d.seo?.robots?.follow!==false
         }
       });
-      setCoverUrl("");window.scrollTo({top:0,behavior:"smooth"});
+      setCoverUrl("");
+      window.scrollTo({top:0,behavior:"smooth"});
     }catch(e){setError(e instanceof Error?e.message:"خطا");}
   }
 
   async function archive(id:string){
     if(!window.confirm("این خدمت به بایگانی منتقل شود؟"))return;
-    const r=await fetch("/api/v1/admin/services/"+id,{method:"DELETE"});const p=await r.json();if(!r.ok||!p.success)setError(p.error?.message||"عملیات ناموفق بود");else await load();
+    const r=await fetch("/api/v1/admin/services/"+id,{method:"DELETE"});
+    const p=await r.json();
+    if(!r.ok||!p.success)setError(p.error?.message||"عملیات ناموفق بود");
+    else await load();
   }
 
   return <main>
@@ -106,8 +142,11 @@ export default function ServicesAdmin(){
           <textarea value={form.seo.description.fa} onChange={e=>setForm({...form,seo:{...form.seo,description:{...form.seo.description,fa:e.target.value}}})} placeholder="Meta description فارسی" rows={3}/>
           <textarea value={form.seo.description.en} onChange={e=>setForm({...form,seo:{...form.seo,description:{...form.seo.description,en:e.target.value}}})} placeholder="Meta description English" dir="ltr" rows={3}/>
           <input value={form.seo.canonical.fa} onChange={e=>setForm({...form,seo:{...form.seo,canonical:{...form.seo.canonical,fa:e.target.value}}})} placeholder="Canonical URL" dir="ltr"/>
-          <input value={form.seo.keywords} onChange={e=>setForm({...form,seo:{...form.seo,keywords:e.target.value}})} placeholder="کلمات کلیدی، با ویرگول جدا کنید"/>
-          <div style={{display:"flex",gap:20}}><label><input type="checkbox" checked={form.seo.index} onChange={e=>setForm({...form,seo:{...form.seo,index:e.target.checked}})}/> Index</label><label><input type="checkbox" checked={form.seo.follow} onChange={e=>setForm({...form,seo:{...form.seo,follow:e.target.checked}})}/> Follow</label></div>
+          <input value={form.seo.keywords} onChange={e=>setForm({...form,seo:{...form.seo,keywords:e.target.value})} placeholder="کلمات کلیدی، با ویرگول جدا کنید"/>
+          <div style={{display:"flex",gap:20}}>
+            <label><input type="checkbox" checked={form.seo.index} onChange={e=>setForm({...form,seo:{...form.seo,index:e.target.checked}})}/> Index</label>
+            <label><input type="checkbox" checked={form.seo.follow} onChange={e=>setForm({...form,seo:{...form.seo,follow:e.target.checked}})}/> Follow</label>
+          </div>
         </div>
       </details>
 
@@ -115,10 +154,16 @@ export default function ServicesAdmin(){
         <option value="draft">پیش‌نویس</option><option value="published">منتشرشده</option><option value="scheduled">زمان‌بندی‌شده</option><option value="archived">بایگانی</option>
       </select>
       {error&&<p style={{color:"#b42318"}}>{error}</p>}
-      <div style={{display:"flex",gap:10}}><button disabled={saving} type="submit">{saving?"در حال ذخیره…":editing?"ذخیره تغییرات":"ایجاد خدمت"}</button>{editing&&<button type="button" onClick={reset}>انصراف</button>}</div>
+      <div style={{display:"flex",gap:10}}>
+        <button disabled={saving} type="submit">{saving?"در حال ذخیره…":editing?"ذخیره تغییرات":"ایجاد خدمت"}</button>
+        {editing&&<button type="button" onClick={reset}>انصراف</button>}
+      </div>
     </form>
 
-    <div style={{display:"flex",gap:10,marginBottom:16}}><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="جستجوی خدمت..." style={{flex:1}}/><button type="button" onClick={()=>void load()}>بازخوانی</button></div>
+    <div style={{display:"flex",gap:10,marginBottom:16}}>
+      <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="جستجوی خدمت..." style={{flex:1}}/>
+      <button type="button" onClick={()=>void load()}>بازخوانی</button>
+    </div>
     <div style={{background:"#fff",border:"1px solid #ddd",borderRadius:14,overflow:"auto"}}>
       {loading?<p style={{padding:20}}>در حال بارگذاری…</p>:items.length===0?<p style={{padding:20}}>موردی یافت نشد.</p>:
       <table style={{width:"100%",borderCollapse:"collapse"}}>
@@ -132,3 +177,4 @@ export default function ServicesAdmin(){
 
     <MediaPicker open={pickerOpen} mode="image" onClose={()=>setPickerOpen(false)} onSelect={media=>{setForm({...form,coverMediaId:media._id});setCoverUrl(media.url);setPickerOpen(false);}}/>
   </main>;
+}
