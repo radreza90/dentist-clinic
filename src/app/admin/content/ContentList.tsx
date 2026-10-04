@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Item={_id:string;slug:string;title?:{fa?:string;en?:string};name?:{fa?:string;en?:string};status?:string};
@@ -27,7 +28,7 @@ export function ContentList({title,endpoint,archive=true,createHref,editBase}:{t
   return <main>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:16}}>
       <div><h1>{title}</h1><p style={{color:"#666"}}>مدیریت محتوای این بخش.</p></div>
-      <div style={{display:"flex",gap:8}}>{createHref&&<a href={createHref} style={{padding:"9px 12px",borderRadius:8,background:"#111",color:"#fff"}}>افزودن</a>}<a href="/admin/content">بازگشت به محتوا</a></div>
+      <div style={{display:"flex",gap:8}}>{createHref&&<Link href={createHref} style={{padding:"9px 12px",borderRadius:8,background:"#111",color:"#fff"}}>افزودن</Link>}<Link href="/admin/content">بازگشت به محتوا</Link></div>
     </div>
     <div style={{display:"flex",gap:10,margin:"24px 0",flexWrap:"wrap"}}>
       <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="جستجو..." style={{flex:"1 1 280px"}}/>
@@ -42,7 +43,7 @@ export function ContentList({title,endpoint,archive=true,createHref,editBase}:{t
         <tbody>{items.map(item=><tr key={item._id} style={{borderTop:"1px solid #eee"}}>
           <td style={{padding:12}}>{item.title?.fa||item.name?.fa||item.title?.en||item.name?.en||"—"}</td><td dir="ltr">{item.slug}</td><td>{item.status||"—"}</td>
           <td style={{padding:12,display:"flex",gap:8}}>
-            {editBase&&<a href={editBase+"/"+item._id}>ویرایش</a>}
+            {editBase&&<Link href={editBase+"/"+item._id}>ویرایش</Link>}
             {archive&&item.status!=="archived"&&<button onClick={()=>void archiveItem(item._id)} type="button">بایگانی</button>}
           </td>
         </tr>)}</tbody>
