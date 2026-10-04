@@ -7,8 +7,16 @@ export interface PaymentGateway{
 }
 
 class MockGateway implements PaymentGateway{
-  async request(input:PaymentRequest){return {authority:input.paymentId,redirectUrl:input.callbackUrl+"?mock=1&paymentId="+encodeURIComponent(input.paymentId)};}
-  async verify(input:{authority:string}){return {ok:true,transactionId:"mock-"+input.authority,raw:{mock:true}};}
+  async request(input:PaymentRequest){
+    const authority=input.paymentId;
+    return {
+      authority,
+      redirectUrl:input.callbackUrl+"?mock=1&paymentId="+encodeURIComponent(input.paymentId)+"&Authority="+encodeURIComponent(authority),
+    };
+  }
+  async verify(input:{authority:string}){
+    return {ok:true,transactionId:"mock-"+input.authority,raw:{mock:true}};
+  }
 }
 
 export function paymentGateway():PaymentGateway{
