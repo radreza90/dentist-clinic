@@ -17,14 +17,9 @@ export async function generateMetadata({params}:Props):Promise<Metadata>{
   return {
     title,
     description,
-    alternates: canonical?{canonical}:undefined,
-    robots: service.seo?.robots ? {index:service.seo.robots.index,follow:service.seo.robots.follow}:undefined,
-    openGraph: {
-      title:service.seo?.ogTitle?.fa||title,
-      description:service.seo?.ogDescription?.fa||description,
-      type:"article",
-      url:canonical,
-    },
+    alternates:canonical?{canonical}:undefined,
+    robots:service.seo?.robots?{index:service.seo.robots.index,follow:service.seo.robots.follow}:undefined,
+    openGraph:{title:service.seo?.ogTitle?.fa||title,description:service.seo?.ogDescription?.fa||description,type:"article",url:canonical},
   };
 }
 
@@ -38,20 +33,19 @@ export default async function ServiceDetailPage({params}:Props){
   const limitations=sanitizeLocalizedHtml(service.limitations);
   const care=sanitizeLocalizedHtml(service.careInstructions);
 
-  return <main dir="rtl" style={{maxWidth:900,margin:"0 auto",padding:"48px 24px"}}>
-    <nav style={{marginBottom:24}}><Link href="/services">خدمات</Link> / <span><Localized value={service.title}/></span></nav>
+  return <main style={{maxWidth:900,margin:"0 auto",padding:"48px 24px"}}>
+    <nav style={{marginBottom:24}}><Link href="/services"><Localized value={{fa:"خدمات",en:"Services"}}/></Link> / <span><Localized value={service.title}/></span></nav>
     <h1><Localized value={service.title}/></h1>
     <p style={{fontSize:18,color:"#555"}}><Localized value={service.excerpt}/></p>
-
     <section style={{marginTop:32}}><Localized value={content} html/></section>
 
-    <section style={{marginTop:32}}><h2>مناسب چه کسانی است؟</h2><Localized value={suitable} html/></section>
-    <section style={{marginTop:32}}><h2>مزایا</h2><Localized value={benefits} html/></section>
-    <section style={{marginTop:32}}><h2>محدودیت‌ها</h2><Localized value={limitations} html/></section>
-    <section style={{marginTop:32}}><h2>مراقبت‌ها</h2><Localized value={care} html/></section>
+    <section style={{marginTop:32}}><h2><Localized value={{fa:"مناسب چه کسانی است؟",en:"Who is it for?"}}/></h2><Localized value={suitable} html/></section>
+    <section style={{marginTop:32}}><h2><Localized value={{fa:"مزایا",en:"Benefits"}}/></h2><Localized value={benefits} html/></section>
+    <section style={{marginTop:32}}><h2><Localized value={{fa:"محدودیت‌ها",en:"Limitations"}}/></h2><Localized value={limitations} html/></section>
+    <section style={{marginTop:32}}><h2><Localized value={{fa:"مراقبت‌های بعد از درمان",en:"Aftercare"}}/></h2><Localized value={care} html/></section>
 
-    {service.faqs?.length ? <section style={{marginTop:32}}>
-      <h2>سؤالات متداول</h2>
+    {service.faqs?.length?<section style={{marginTop:32}}>
+      <h2><Localized value={{fa:"سؤالات متداول",en:"Frequently Asked Questions"}}/></h2>
       {service.faqs.map((faq:any,index:number)=><details key={index} style={{borderTop:"1px solid #ddd",padding:"14px 0"}}>
         <summary><Localized value={faq.question}/></summary>
         <div style={{marginTop:10}}><Localized value={sanitizeLocalizedHtml(faq.answer)} html/></div>
@@ -59,9 +53,11 @@ export default async function ServiceDetailPage({params}:Props){
     </section>:null}
 
     <section style={{marginTop:40,padding:24,borderRadius:16,background:"#f5f7fa"}}>
-      <h2>برای این خدمت وقت بگیرید</h2>
-      <p>برای انتخاب زمان مناسب و ثبت درخواست رزرو، وارد بخش نوبت‌دهی شوید.</p>
-      <Link href={"/booking?service="+encodeURIComponent(service.slug)} style={{display:"inline-block",padding:"12px 18px",borderRadius:10,background:"#111",color:"#fff"}}>درخواست نوبت</Link>
+      <h2><Localized value={{fa:"برای این خدمت وقت بگیرید",en:"Book this treatment"}}/></h2>
+      <p><Localized value={{fa:"برای انتخاب زمان مناسب و ثبت درخواست رزرو، وارد بخش نوبت‌دهی شوید.",en:"Choose a suitable time and submit your booking request."}}/></p>
+      <Link href={"/booking?service="+encodeURIComponent(service.slug)} style={{display:"inline-block",padding:"12px 18px",borderRadius:10,background:"#111",color:"#fff"}}>
+        <Localized value={{fa:"درخواست نوبت",en:"Book an appointment"}}/>
+      </Link>
     </section>
   </main>;
 }
