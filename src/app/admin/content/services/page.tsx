@@ -1,28 +1,36 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import { RichEditor } from "@/components/editor/RichEditor";
 
 type Localized = { fa: string; en: string };
-type Service = {
-  _id: string;
+type Service = { _id: string; slug: string; title: Localized; excerpt?: Localized; status?: string; content?: Localized };
+type ServiceForm = {
   slug: string;
   title: Localized;
-  excerpt?: Localized;
-  status?: string;
+  excerpt: Localized;
+  content: Localized;
+  status: string;
 };
 
-const empty = { slug: "", title: { fa: "", en: "" }, excerpt: { fa: "", en: "" }, status: "draft" };
+const empty: ServiceForm = {
+  slug: "",
+  title: { fa: "", en: "" },
+  excerpt: { fa: "", en: "" },
+  content: { fa: "", en: "" },
+  status: "draft",
+};
 
 export default function ServicesAdmin() {
   const [items, setItems] = useState<Service[]>([]);
-  const [form, setForm] = useState<any>(empty);
+  const [form, setForm] = useState<ServiceForm>({ ...empty, title: { ...empty.title }, excerpt: { ...empty.excerpt }, content: { ...empty.content } });
   const [editing, setEditing] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -36,15 +44,13 @@ export default function ServicesAdmin() {
     } finally {
       setLoading(false);
     }
-  }
-
-  useEffect(() => {
-    load();
   }, [search]);
+
+  useEffect(() => { void load(); }, [load]);
 
   function reset() {
     setEditing(null);
-    setForm({ ...empty, title: { ...empty.title }, excerpt: { ...empty.excerpt } });
+    setForm({ ...empty, title: { ...empty.title }, excerpt: { ...empty.excerpt }, content: { ...empty.content } });
     setError("");
   }
 
@@ -53,14 +59,11 @@ export default function ServicesAdmin() {
     setSaving(true);
     setError("");
     try {
-      const r = await fetch(
-        editing ? "/api/v1/admin/services/" + editing : "/api/v1/admin/services",
-        {
-          method: editing ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        },
-      );
+      const r = await fetch(editing ? "/api/v1/admin/services/" + editing : "/api/v1/admin/services", {
+        method: editing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
       const p = await r.json();
       if (!r.ok || !p.success) throw new Error(p.error?.message || "ذخیره انجام نشد");
       reset();
@@ -72,15 +75,25 @@ export default function ServicesAdmin() {
     }
   }
 
-  function edit(item: Service) {
-    setEditing(item._id);
-    setForm({
-      slug: item.slug,
-      title: item.title || { fa: "", en: "" },
-      excerpt: item.excerpt || { fa: "", en: "" },
-      status: item.status || "draft",
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  async function edit(item: Service) {
+    setError("");
+    try {
+      const r = await fetch("/api/v1/admin/services/" + item._id, { cache: "no-store" });
+      const p = await r.json();
+      if (!r.ok || !p.success) throw new Error(p.error?.message || "خطا در دریافت خدمت");
+      const data = p.data;
+      setEditing(item._id);
+      setForm({
+        slug: data.slug,
+        title: data.title || { fa: "", en: "" },
+        excerpt: data.excerpt || { fa: "", en: "" },
+        content: data.content || { fa: "", en: "" },
+        status: data.status || "draft",
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خطا");
+    }
   }
 
   async function archive(id: string) {
@@ -105,6 +118,12 @@ export default function ServicesAdmin() {
         <input value={form.title.en} onChange={(e) => setForm({ ...form, title: { ...form.title, en: e.target.value } })} placeholder="English title" dir="ltr" />
         <textarea value={form.excerpt.fa} onChange={(e) => setForm({ ...form, excerpt: { ...form.excerpt, fa: e.target.value } })} placeholder="خلاصه فارسی" rows={3} />
         <textarea value={form.excerpt.en} onChange={(e) => setForm({ ...form, excerpt: { ...form.excerpt, en: e.target.value } })} placeholder="English excerpt" dir="ltr" rows={3} />
+
+        <label>محتوای فارسی</label>
+        <RichEditor value={form.content.fa} onChange={(value) => setForm({ ...form, content: { ...form.content, fa: value } })} />
+        <label>English content</label>
+        <RichEditor value={form.content.en} onChange={(value) => setForm({ ...form, content: { ...form.content, en: value } })} placeholder="Write the service content…" />
+
         <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
           <option value="draft">پیش‌نویس</option>
           <option value="published">منتشرشده</option>
@@ -120,7 +139,7 @@ export default function ServicesAdmin() {
 
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="جستجوی خدمت..." style={{ flex: 1 }} />
-        <button type="button" onClick={load}>بازخوانی</button>
+        <button type="button" onClick={() => void load()}>بازخوانی</button>
       </div>
 
       <div style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 14, overflow: "auto" }}>
@@ -134,8 +153,8 @@ export default function ServicesAdmin() {
               <td style={{ padding: 12 }}>{item.title?.fa || item.title?.en || "—"}</td>
               <td dir="ltr">{item.slug}</td><td>{item.status || "draft"}</td>
               <td style={{ padding: 12, display: "flex", gap: 8 }}>
-                <button onClick={() => edit(item)}>ویرایش</button>
-                <button onClick={() => archive(item._id)}>بایگانی</button>
+                <button type="button" onClick={() => void edit(item)}>ویرایش</button>
+                <button type="button" onClick={() => void archive(item._id)}>بایگانی</button>
               </td>
             </tr>)}</tbody>
           </table>}
