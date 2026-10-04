@@ -4,7 +4,9 @@ import { connectDB } from "@/lib/db";
 import { getAuth,can } from "@/lib/rbac";
 import { ok,fail } from "@/lib/api";
 import { z } from "zod";
+import { seoInput } from "@/lib/validators";
+
 const localized=z.object({fa:z.string().max(5000).optional().default(""),en:z.string().max(5000).optional().default("")});
-const input=z.object({slug:z.string().trim().min(1).max(160),title:localized,excerpt:localized.optional(),content:localized.optional(),status:z.enum(["draft","published","scheduled","archived"]).optional()});
+const input=z.object({slug:z.string().trim().min(1).max(160),title:localized,excerpt:localized.optional(),content:z.object({fa:z.string().max(100000).optional(),en:z.string().max(100000).optional()}).optional(),seo:seoInput.optional(),status:z.enum(["draft","published","scheduled","archived"]).optional()});
 export async function GET(req:Request){return listContent(req,PageModel);}
 export async function POST(req:Request){const a=await getAuth(req);if(!a||!can(String(a.role),"content:write"))return fail("Forbidden",403);try{const p=input.safeParse(await req.json());if(!p.success)return fail("Invalid page payload",422,p.error.flatten());await connectDB();if(await PageModel.exists({slug:p.data.slug}))return fail("Slug already exists",409);return ok(await PageModel.create({...p.data,createdBy:a.sub,updatedBy:a.sub}),201);}catch(e){return fail(e instanceof Error?e.message:"Create failed",500);}}
