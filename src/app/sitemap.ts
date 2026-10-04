@@ -1,15 +1,18 @@
 import type { MetadataRoute } from "next";
 import { BlogPostModel, DoctorModel, PageModel, PortfolioItemModel, ServiceModel } from "@/models";
 
+export const dynamic="force-dynamic";
+
 export default async function sitemap():Promise<MetadataRoute.Sitemap>{
   const base=process.env.NEXT_PUBLIC_APP_URL||"http://localhost:3000";
+  const now=new Date();
   const entries:MetadataRoute.Sitemap=[
-    {url:base,lastModified:new Date(),changeFrequency:"daily",priority:1},
-    {url:base+"/services",lastModified:new Date(),changeFrequency:"weekly",priority:.9},
-    {url:base+"/doctors",lastModified:new Date(),changeFrequency:"monthly",priority:.8},
-    {url:base+"/blog",lastModified:new Date(),changeFrequency:"daily",priority:.8},
-    {url:base+"/portfolio",lastModified:new Date(),changeFrequency:"weekly",priority:.7},
-    {url:base+"/booking",lastModified:new Date(),changeFrequency:"weekly",priority:.9},
+    {url:base,lastModified:now,changeFrequency:"daily",priority:1},
+    {url:base+"/services",lastModified:now,changeFrequency:"weekly",priority:.9},
+    {url:base+"/doctors",lastModified:now,changeFrequency:"monthly",priority:.8},
+    {url:base+"/blog",lastModified:now,changeFrequency:"daily",priority:.8},
+    {url:base+"/portfolio",lastModified:now,changeFrequency:"weekly",priority:.7},
+    {url:base+"/booking",lastModified:now,changeFrequency:"weekly",priority:.9},
   ];
   const [pages,services,doctors,posts,items]=await Promise.all([
     PageModel.find({status:"published"}).select("slug updatedAt").lean(),
