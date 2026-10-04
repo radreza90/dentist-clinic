@@ -1,18 +1,6 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { verifyAccessToken } from "@/lib/auth";
+import { LogoutButton } from "./LogoutButton";
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const token = (await cookies()).get("access_token")?.value;
-  if (!token) redirect("/admin/login");
-
-  try {
-    const auth = await verifyAccessToken(token);
-    if (!auth.sub || !auth.role || auth.role === "patient") redirect("/admin/login");
-  } catch {
-    redirect("/admin/login");
-  }
-
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div dir="rtl" style={{ minHeight: "100vh", background: "#f7f8fa", color: "#17181a" }}>
       <header style={{ padding: 20, borderBottom: "1px solid #ddd", background: "#fff" }}>
@@ -25,9 +13,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <a href="/admin/media">رسانه</a>
             <a href="/admin/settings">تنظیمات</a>
             <a href="/" target="_blank" rel="noreferrer">مشاهده سایت</a>
-            <form action="/api/v1/auth/logout" method="post">
-              <button type="submit">خروج</button>
-            </form>
+            <LogoutButton />
           </nav>
         </div>
       </header>
