@@ -1,6 +1,6 @@
 import { BlogCategoryModel } from "@/models";
 import { listContent } from "@/lib/content-crud";
-import { connectDB } from "@/lib/db"; import { getAuth,can } from "@/lib/rbac"; import { ok,fail } from "@/lib/api"; import { z } from "zod";
-const input=z.object({slug:z.string().trim().min(1).max(160),name:z.object({fa:z.string().max(5000),en:z.string().max(5000)}),description:z.object({fa:z.string().max(5000).optional(),en:z.string().max(5000).optional()}).optional()});
+import { connectDB } from "@/lib/db"; import { getAuth,can } from "@/lib/rbac"; import { ok,fail } from "@/lib/api"; import { z } from "zod"; import { seoInput } from "@/lib/validators";
+const input=z.object({slug:z.string().trim().min(1).max(160),name:z.object({fa:z.string().max(5000),en:z.string().max(5000)}),description:z.object({fa:z.string().max(100000).optional(),en:z.string().max(100000).optional()}).optional(),seo:seoInput.optional()});
 export async function GET(req:Request){return listContent(req,BlogCategoryModel);}
 export async function POST(req:Request){const a=await getAuth(req);if(!a||!can(String(a.role),"content:write"))return fail("Forbidden",403);try{const p=input.safeParse(await req.json());if(!p.success)return fail("Invalid category payload",422,p.error.flatten());await connectDB();if(await BlogCategoryModel.exists({slug:p.data.slug}))return fail("Slug already exists",409);return ok(await BlogCategoryModel.create({...p.data,createdBy:a.sub,updatedBy:a.sub}),201);}catch(e){return fail(e instanceof Error?e.message:"Create failed",500);}}
