@@ -1,2 +1,2 @@
 import { ContentList } from "../ContentList";
-export default function PagesAdmin(){return <ContentList title="صفحات" endpoint="/api/v1/admin/pages"/>;}
+export default function PagesAdmin(){return <ContentList title="صفحات" endpoint="/api/v1/admin/pages" createHref="/admin/content/pages/new" editBase="/admin/content/pages"/>;}
