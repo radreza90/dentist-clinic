@@ -1,0 +1,2 @@
+import {connectDB} from "@/lib/db"; import {DoctorModel} from "@/models"; import {ok,fail} from "@/lib/api";
+export async function GET(){try{await connectDB();const items=await DoctorModel.find({status:"published"}).sort({createdAt:-1}).lean();return ok(items);}catch(e){return fail(e instanceof Error?e.message:"Unable to load doctors",500);}}
