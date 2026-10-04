@@ -5,21 +5,42 @@ export const localizedStringInput = z.object({
   en: z.string().trim().max(5000).optional().default(""),
 });
 
+export const localizedTextInput = z.object({
+  fa: z.string().max(100000).optional().default(""),
+  en: z.string().max(100000).optional().default(""),
+});
+
+export const seoInput = z.object({
+  title: localizedStringInput.optional(),
+  description: localizedTextInput.optional(),
+  keywords: z.array(z.string().trim().max(120)).max(50).optional(),
+  canonical: localizedStringInput.optional(),
+  robots: z.object({
+    index: z.boolean().default(true),
+    follow: z.boolean().default(true),
+  }).optional(),
+  ogTitle: localizedStringInput.optional(),
+  ogDescription: localizedTextInput.optional(),
+  ogImageMediaId: z.string().nullable().optional(),
+  twitterCard: z.enum(["summary","summary_large_image"]).optional(),
+});
+
 export const serviceInput = z.object({
   slug: z.string().trim().min(1).max(160).regex(/^[a-z0-9\u0600-\u06ff]+(?:-[a-z0-9\u0600-\u06ff]+)*$/i),
   title: localizedStringInput,
-  excerpt: localizedStringInput.optional(),
-  content: localizedStringInput.optional(),
+  excerpt: localizedTextInput.optional(),
+  content: localizedTextInput.optional(),
+  suitableFor: localizedTextInput.optional(),
+  benefits: localizedTextInput.optional(),
+  limitations: localizedTextInput.optional(),
+  careInstructions: localizedTextInput.optional(),
+  faqs: z.array(z.object({question:localizedStringInput,answer:localizedTextInput})).optional(),
+  icon: z.string().max(200).optional(),
+  coverMediaId: z.string().optional().nullable(),
+  seo: seoInput.optional(),
   status: z.enum(["draft","published","scheduled","archived"]).optional(),
   publishedAt: z.coerce.date().optional().nullable(),
   scheduledAt: z.coerce.date().optional().nullable(),
-  suitableFor: z.array(localizedStringInput).optional(),
-  benefits: z.array(localizedStringInput).optional(),
-  limitations: z.array(localizedStringInput).optional(),
-  careInstructions: z.array(localizedStringInput).optional(),
-  faqs: z.array(z.object({question:localizedStringInput,answer:localizedStringInput})).optional(),
-  icon: z.string().max(200).optional(),
-  coverMediaId: z.string().optional().nullable(),
 });
 
 export const contentQuery = z.object({
