@@ -1,0 +1,2 @@
+import {connectDB} from "@/lib/db"; import {SiteSettingsModel} from "@/models"; import {ok,fail} from "@/lib/api";
+export async function GET(){try{await connectDB();const data=await SiteSettingsModel.findOne({key:"main"}).lean();return ok(data);}catch(e){return fail(e instanceof Error?e.message:"Unable to load site settings",500);}}
