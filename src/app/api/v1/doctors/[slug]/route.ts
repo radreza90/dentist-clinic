@@ -1,0 +1,2 @@
+import {connectDB} from "@/lib/db"; import {DoctorModel} from "@/models"; import {ok,fail} from "@/lib/api";
+export async function GET(_:Request,{params}:{params:Promise<{slug:string}>}){try{await connectDB();const {slug}=await params;const item=await DoctorModel.findOne({slug,status:"published"}).lean();return item?ok(item):fail("Doctor not found",404);}catch(e){return fail(e instanceof Error?e.message:"Unable to load doctor",500);}}
