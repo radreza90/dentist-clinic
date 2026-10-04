@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BlogPostModel } from "@/models";
 import { Localized } from "@/components/i18n/Localized";
 
-export const revalidate=60;
+export const dynamic="force-dynamic";
 
 export default async function BlogPage(){
   const posts=await BlogPostModel.find({status:"published"}).sort({publishedAt:-1,createdAt:-1}).limit(50).lean();
