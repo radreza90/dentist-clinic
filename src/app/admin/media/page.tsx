@@ -1,0 +1,1 @@
+export default function MediaAdmin(){return <main><h1>کتابخانه رسانه</h1><p>هسته Media آماده است؛ آپلود و Media Picker در فاز بعدی روی همین مدل پیاده می‌شود.</p></main>}
