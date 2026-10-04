@@ -1,0 +1,6 @@
+import { Schema } from "mongoose";
+export const localizedStringSchema=new Schema({fa:{type:String,default:""},en:{type:String,default:""}},{_id:false});
+export const localizedTextSchema=new Schema({fa:{type:String,default:""},en:{type:String,default:""}},{_id:false});
+export const seoSchema=new Schema({title:localizedStringSchema,description:localizedStringSchema,keywords:{type:[String],default:[]},canonical:localizedStringSchema,robots:{index:{type:Boolean,default:true},follow:{type:Boolean,default:true}},ogTitle:localizedStringSchema,ogDescription:localizedStringSchema,ogImageMediaId:{type:Schema.Types.ObjectId,ref:"Media",default:null},twitterCard:{type:String,enum:["summary","summary_large_image"],default:"summary"}},{_id:false});
+export const auditFields={createdBy:{type:Schema.Types.ObjectId,ref:"User",default:null},updatedBy:{type:Schema.Types.ObjectId,ref:"User",default:null}};
+export const contentStatus={type:String,enum:["draft","published","scheduled","archived"],default:"draft"};
