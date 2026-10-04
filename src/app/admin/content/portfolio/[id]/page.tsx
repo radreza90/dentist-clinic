@@ -1,0 +1,2 @@
+import { ContentEditor } from "../../ContentEditor";
+export default async function EditPortfolio({params}:{params:Promise<{id:string}>}){const {id}=await params;return <ContentEditor kind="portfolio" title="نمونه‌کار" endpoint="/api/v1/admin/portfolio" id={id}/>;}
