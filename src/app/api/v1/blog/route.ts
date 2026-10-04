@@ -1,0 +1,2 @@
+import {connectDB} from "@/lib/db"; import {BlogPostModel} from "@/models"; import {ok,fail} from "@/lib/api";
+export async function GET(){try{await connectDB();return ok(await BlogPostModel.find({status:"published"}).sort({publishedAt:-1}).limit(50).lean());}catch(e){return fail(e instanceof Error?e.message:"Unable to load posts",500);}}
