@@ -8,20 +8,27 @@ type Slot={start:string;end:string;label:string;available:boolean};
 function tomorrow(){const d=new Date(Date.now()+24*60*60*1000);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");}
 
 export default function BookingPage(){
-  const initialSlug=typeof window!=="undefined"?new URLSearchParams(window.location.search).get("service")||"":""; 
+  const [initialSlug,setInitialSlug]=useState("");
   const [services,setServices]=useState<Service[]>([]); const [serviceId,setServiceId]=useState("");
   const [date,setDate]=useState(tomorrow()); const [slots,setSlots]=useState<Slot[]>([]); const [slot,setSlot]=useState<Slot|null>(null);
   const [phone,setPhone]=useState(""); const [name,setName]=useState(""); const [otp,setOtp]=useState("");
   const [verificationToken,setVerificationToken]=useState(""); const [step,setStep]=useState(1); const [loading,setLoading]=useState(false);
-  const [error,setError]=useState(""); const [result,setResult]=useState<any>(null);
+  const [error,setError]=useState(""); const [result,setResult]=useState<any>(null); const [paying,setPaying]=useState(false);
   const service=useMemo(()=>services.find(s=>s._id===serviceId),[services,serviceId]);
 
+  useEffect(()=>{setInitialSlug(new URLSearchParams(window.location.search).get("service")||"");},[]);
   useEffect(()=>{fetch("/api/v1/services",{cache:"no-store"}).then(r=>r.json()).then(p=>{if(!p.success)return;const list=p.data||[];setServices(list);if(initialSlug){const found=list.find((x:Service)=>x.slug===initialSlug);if(found)setServiceId(found._id);}}).catch(()=>setError("خطا در دریافت خدمات"));},[initialSlug]);
   useEffect(()=>{if(!serviceId||!date)return;setSlot(null);setSlots([]);setError("");fetch("/api/v1/booking/availability?date="+encodeURIComponent(date)+"&serviceId="+encodeURIComponent(serviceId),{cache:"no-store"}).then(r=>r.json()).then(p=>{if(!p.success){setError(p.error?.message||"خطا در دریافت زمان‌ها");return;}setSlots(p.data.slots||[]);}).catch(()=>setError("خطا در دریافت زمان‌های آزاد"));},[serviceId,date]);
 
   async function requestOtp(){setError("");setLoading(true);try{const r=await fetch("/api/v1/auth/otp/request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone,purpose:"booking"})});const p=await r.json();if(!r.ok||!p.success)throw new Error(p.error?.message||"ارسال کد ناموفق بود");setStep(3);}catch(e){setError(e instanceof Error?e.message:"خطا");}finally{setLoading(false);}}
   async function verify(){setError("");setLoading(true);try{const r=await fetch("/api/v1/auth/otp/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone,code:otp,purpose:"booking"})});const p=await r.json();if(!r.ok||!p.success)throw new Error(p.error?.message||"کد تأیید نامعتبر است");setVerificationToken(p.data.verificationToken);setStep(4);}catch(e){setError(e instanceof Error?e.message:"خطا");}finally{setLoading(false);}}
   async function submitBooking(){if(!slot||!verificationToken||!serviceId)return;setError("");setLoading(true);try{const r=await fetch("/api/v1/booking/request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({verificationToken,phone,name,serviceId,startsAt:slot.start,endsAt:slot.end})});const p=await r.json();if(!r.ok||!p.success)throw new Error(p.error?.message||"ثبت نوبت ناموفق بود");setResult(p.data);setStep(5);}catch(e){setError(e instanceof Error?e.message:"خطا");}finally{setLoading(false);}}
+  async function startPayment(){
+    const paymentId=result?.payment?.id;if(!paymentId)return;
+    setPaying(true);setError("");
+    try{const r=await fetch("/api/v1/payment/request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentId})});const p=await r.json();if(!r.ok||!p.success)throw new Error(p.error?.message||"شروع پرداخت ناموفق بود");window.location.href=p.data.redirectUrl;}
+    catch(e){setError(e instanceof Error?e.message:"خطا");}finally{setPaying(false);}
+  }
 
   return <main style={{maxWidth:760,margin:"0 auto",padding:"48px 24px"}}>
     <h1>نوبت‌دهی آنلاین</h1><p style={{color:"#666"}}>انتخاب زمان، تأیید موبایل و ثبت درخواست نوبت.</p>
@@ -35,7 +42,7 @@ export default function BookingPage(){
     {step===2&&<section style={{display:"grid",gap:14}}><h2>اطلاعات تماس</h2><input value={name} onChange={e=>setName(e.target.value)} placeholder="نام و نام خانوادگی" required/><input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="شماره موبایل" inputMode="tel" required/><button disabled={!name||!phone||loading} type="button" onClick={()=>void requestOtp()}>{loading?"در حال ارسال…":"ارسال کد تأیید"}</button><button type="button" onClick={()=>setStep(1)}>بازگشت</button></section>}
     {step===3&&<section style={{display:"grid",gap:14}}><h2>تأیید شماره موبایل</h2><p>کد ۶ رقمی ارسال‌شده را وارد کنید.</p><input value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g,"").slice(0,6))} placeholder="کد تأیید" inputMode="numeric" maxLength={6}/><button disabled={otp.length!==6||loading} type="button" onClick={()=>void verify()}>{loading?"در حال بررسی…":"تأیید کد"}</button><button type="button" onClick={()=>setStep(2)}>تغییر شماره</button></section>}
     {step===4&&<section style={{display:"grid",gap:14}}><h2>خلاصه نوبت</h2><p>خدمت: {service?.title.fa||service?.title.en}</p><p>تاریخ: {date}</p><p>زمان: {slot?.label}</p><p>نام: {name}</p><p>موبایل: {phone}</p><button disabled={loading} type="button" onClick={()=>void submitBooking()}>{loading?"در حال ثبت…":"ثبت درخواست نوبت"}</button><button type="button" onClick={()=>setStep(1)}>ویرایش</button></section>}
-    {step===5&&result&&<section style={{padding:24,border:"1px solid #ddd",borderRadius:14}}><h2>درخواست نوبت ثبت شد ✅</h2><p>کد نوبت: <strong>{String(result.appointment?._id||"—")}</strong></p>{result.paymentRequired?<><p>برای نهایی‌شدن نوبت باید هزینه رزرو پرداخت شود.</p><p>درگاه پرداخت در محیط فعلی هنوز پیکربندی نشده است.</p></>:<p>درخواست شما برای تخصیص پزشک در صف قرار گرفت.</p>}<a href="/" style={{display:"inline-block",marginTop:10}}>بازگشت به سایت</a></section>}
+    {step===5&&result&&<section style={{padding:24,border:"1px solid #ddd",borderRadius:14}}><h2>درخواست نوبت ثبت شد ✅</h2><p>کد نوبت: <strong>{String(result.appointment?._id||"—")}</strong></p>{result.paymentRequired?<><p>مبلغ قابل پرداخت: {result.payment.amount} {result.payment.currency}</p><button type="button" disabled={paying} onClick={()=>void startPayment()}>{paying?"در حال انتقال…":"پرداخت هزینه رزرو"}</button></>:<p>درخواست شما برای تخصیص پزشک در صف قرار گرفت.</p>}<div style={{marginTop:16}}><a href="/account">پنل بیمار</a> · <a href="/">بازگشت به سایت</a></div></section>}
     {error&&<p style={{marginTop:20,color:"#b42318"}}>{error}</p>}
   </main>;
 }
