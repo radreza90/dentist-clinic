@@ -1,0 +1,2 @@
+import {connectDB} from "@/lib/db"; import {AppointmentModel} from "@/models"; import {ok,fail} from "@/lib/api";
+export async function GET(){try{await connectDB();const items=await AppointmentModel.find({status:{$nin:["cancelled"]}}).sort({startsAt:1}).limit(100).lean();return ok(items);}catch(e){return fail(e instanceof Error?e.message:"Unable to load appointments",500);}}
