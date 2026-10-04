@@ -1,0 +1,2 @@
+import { ContentEditor } from "../../ContentEditor";
+export default async function EditBlog({params}:{params:Promise<{id:string}>}){const {id}=await params;return <ContentEditor kind="blog" title="مقاله" endpoint="/api/v1/admin/blog" id={id}/>;}
