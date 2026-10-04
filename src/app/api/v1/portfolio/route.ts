@@ -1,0 +1,2 @@
+import {connectDB} from "@/lib/db"; import {PortfolioItemModel} from "@/models"; import {ok,fail} from "@/lib/api";
+export async function GET(){try{await connectDB();return ok(await PortfolioItemModel.find({status:"published"}).sort({createdAt:-1}).limit(50).lean());}catch(e){return fail(e instanceof Error?e.message:"Unable to load portfolio",500);}}
