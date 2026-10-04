@@ -1,0 +1,4 @@
+import type {NextRequest} from "next/server"; import {verifyAccessToken} from "./auth";
+export const permissions={super_admin:["*"],admin:["content:read","content:write","media:write","appointments:read","appointments:write","settings:read"],manager:["content:read","appointments:read","appointments:write","media:write"],editor:["content:read","content:write","media:write"],patient:["appointments:self"]} as const;
+export async function getAuth(req:NextRequest){const token=req.cookies.get("access_token")?.value||req.headers.get("authorization")?.replace(/^Bearer\s+/i,"");if(!token)return null;try{return await verifyAccessToken(token)}catch{return null}}
+export function can(role:string|undefined,permission:string){const list=(permissions as Record<string,readonly string[]>)[role||""];return !!list&&(list.includes("*")||list.includes(permission));}
