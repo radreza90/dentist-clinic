@@ -4,7 +4,9 @@ import { getAuth,can } from "@/lib/rbac";
 import { ok,fail } from "@/lib/api";
 import { sanitizeLocalizedHtml } from "@/lib/sanitize";
 import { z } from "zod";
+import { createContentRevision } from "@/lib/revisions";
 import { seoInput } from "@/lib/validators";
+import { createContentRevision } from "@/lib/revisions";
 
 const localized=z.object({fa:z.string().max(5000).optional(),en:z.string().max(5000).optional()});
 const text=z.object({fa:z.string().max(100000).optional(),en:z.string().max(100000).optional()});
@@ -42,6 +44,7 @@ export async function PUT(req:Request,{params}:{params:Promise<{id:string}>}){
     await connectDB();const {id}=await params;
     if(parsed.data.slug&&await DoctorModel.exists({slug:parsed.data.slug,_id:{$ne:id}}))return fail("Slug already exists",409);
     const item=await DoctorModel.findByIdAndUpdate(id,{$set:{...sanitizeDoctor(parsed.data),updatedBy:a.sub}},{new:true,runValidators:true}).lean();
+    if(item)await createContentRevision("doctor",id,item,String(a.sub),"update");
     return item?ok(item):fail("Doctor not found",404);
   }catch(e){return fail(e instanceof Error?e.message:"Update failed",500);}
 }
