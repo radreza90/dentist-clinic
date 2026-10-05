@@ -11,7 +11,7 @@ export async function GET(req: Request) {
 
     const filter = can(auth.role, "appointments:read")
       ? { status: { $nin: ["cancelled"] } }
-      : { userId: auth.sub, status: { $nin: ["cancelled"] } };
+      : { userId: String(auth.sub), status: { $nin: ["cancelled"] } };
 
     const items = await AppointmentModel.find(filter).sort({ startsAt: 1 }).limit(100).lean();
     return ok(items);
