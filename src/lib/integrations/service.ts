@@ -23,9 +23,12 @@ export async function syncIntegrationRegistry(){
   }
 }
 
-export async function getActiveIntegration(type:"payment"|"sms"){
+export async function getIntegration(type:"payment"|"sms",provider?:string,activeOnly=true){
   await connectDB();
-  const item=await IntegrationModel.findOne({type,enabled:true}).sort({isDefault:-1,updatedAt:-1});
+  const filter:Record<string,unknown>={type};
+  if(provider)filter.provider=provider;
+  if(activeOnly)filter.enabled=true;
+  const item=await IntegrationModel.findOne(filter).sort({isDefault:-1,updatedAt:-1});
   if(!item)return null;
   const definition=getIntegrationDefinition(type,item.provider);
   if(!definition)return null;
