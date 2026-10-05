@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ServiceModel, DoctorModel, BlogPostModel, PortfolioItemModel, SiteSettingsModel } from "@/models";
 import { Localized } from "@/components/i18n/Localized";
-import { SiteFooter } from "@/components/site/SiteFooter";
 
 export const dynamic="force-dynamic";
 
@@ -81,6 +80,5 @@ export default async function Home(){
         </div>
       </section>}
     </main>
-    <SiteFooter/>
   </div>;
 }
