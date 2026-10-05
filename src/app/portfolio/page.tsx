@@ -5,7 +5,7 @@ import { Localized } from "@/components/i18n/Localized";
 export const dynamic="force-dynamic";
 
 export default async function PortfolioPage(){
-  const items=await PortfolioItemModel.find({status:"published"}).sort({createdAt:-1}).limit(50).lean();
+  const items=await PortfolioItemModel.find({status:"published", "privacy.consentStatus":"granted"}).sort({createdAt:-1}).limit(50).lean();
   const mediaIds=items.flatMap(item=>[...(item.afterMediaIds||[])].slice(0,1));
   const media=mediaIds.length?await MediaModel.find({_id:{$in:mediaIds}}).lean():[];
   const mediaMap=new Map(media.map(item=>[String(item._id),item]));
