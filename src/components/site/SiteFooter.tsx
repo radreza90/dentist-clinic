@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { SiteSettingsModel } from "@/models";
 import { Localized } from "@/components/i18n/Localized";
+import { getMenu,buildMenuTree } from "@/lib/menus";
 
 export async function SiteFooter(){
-  const site=await SiteSettingsModel.findOne({key:"main"}).lean();
+  const [site,footerMenu]=await Promise.all([SiteSettingsModel.findOne({key:"main"}).lean(),getMenu("footer")]);
   const lat=site?.latitude, lng=site?.longitude;
   const mapUrl=lat!=null&&lng!=null ? "https://www.google.com/maps/search/?api=1&query="+lat+","+lng : null;
   const directionsUrl=lat!=null&&lng!=null ? "https://www.google.com/maps/dir/?api=1&destination="+lat+","+lng : null;
@@ -17,7 +18,9 @@ export async function SiteFooter(){
       <div><h3><Localized value={{fa:"آدرس کلینیک",en:"Clinic address"}}/></h3><p><Localized value={site?.address}/></p>
         {mapUrl?<div style={{display:"flex",gap:10,flexWrap:"wrap"}}><a href={mapUrl} target="_blank" rel="noreferrer"><Localized value={{fa:"مشاهده روی نقشه",en:"View on map"}}/></a><a href={directionsUrl!} target="_blank" rel="noreferrer"><Localized value={{fa:"مسیریابی",en:"Directions"}}/></a></div>:null}
       </div>
-      <div><h3><Localized value={{fa:"رزرو",en:"Booking"}}/></h3><Link href="/booking"><Localized value={{fa:"نوبت‌دهی آنلاین",en:"Book online"}}/></Link><br/><Link href="/services"><Localized value={{fa:"خدمات",en:"Services"}}/></Link></div>
+      <div><h3><Localized value={footerMenu?.name||{fa:"لینک‌ها",en:"Links"}}/></h3>
+        {footerMenu?buildMenuTree(footerMenu.items).map(item=><div key={item._id}><a href={item.href} target={item.targetBlank?"_blank":undefined} rel={item.targetBlank?"noreferrer":undefined}><Localized value={item.label}/></a></div>):<><Link href="/booking"><Localized value={{fa:"نوبت‌دهی آنلاین",en:"Book online"}}/></Link><br/><Link href="/services"><Localized value={{fa:"خدمات",en:"Services"}}/></Link></>}
+      </div>
     </div>
     <div style={{padding:"14px 24px",borderTop:"1px solid #ddd",textAlign:"center",color:"#666"}}>© {new Date().getFullYear()} <Localized value={site?.clinicName||{fa:"کلینیک دندانپزشکی",en:"Dental Clinic"}}/></div>
   </footer>;
