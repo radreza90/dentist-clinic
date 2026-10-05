@@ -7,6 +7,7 @@ import { fail } from "@/lib/api";
 import { weekdayForDate } from "@/lib/timezone";
 import { setSessionCookies } from "@/lib/session";
 import { normalizeIranianMobile } from "@/lib/phone";
+import { getIntegration } from "@/lib/integrations/service";
 
 const input=z.object({
   verificationToken:z.string().min(20),
@@ -71,6 +72,7 @@ export async function POST(req:Request){
     const existingUser=await UserModel.findOne({phone}).select("_id role isActive").lean();
     const user=existingUser||await UserModel.create({phone,role:"patient",isActive:true,firstName:p.data.name});
     const requiresPayment=(service.bookingFee||0)>0;
+    if(requiresPayment&&!await getIntegration("payment"))return fail("No active payment gateway is configured in the admin panel",503);
     const appointment=await AppointmentModel.create({
       userId:user._id,
       patientSnapshot:{phone,name:p.data.name},
