@@ -79,9 +79,9 @@ export async function sendSmsViaProvider(
 ){
   if(provider==="console"){
     if(process.env.NODE_ENV==="production")throw new Error("Console SMS provider is disabled in production");
-    return void await new ConsoleSmsProvider().send(phone,message);
+    return new ConsoleSmsProvider().send(phone,message);
   }
-  if(provider==="ippanel")return void await new IPPanelSmsProvider(config).send(phone,message);
+  if(provider==="ippanel")return new IPPanelSmsProvider(config).send(phone,message);
   throw new Error("Unsupported SMS module: "+provider);
 }
 
