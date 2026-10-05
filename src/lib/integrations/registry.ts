@@ -48,7 +48,7 @@ export const integrationRegistry:IntegrationDefinition[]=[
     description:{fa:"پنل پیامک IPPanel برای OTP و یادآوری نوبت",en:"IPPanel SMS for OTP and appointment reminders"},
     fields:[
       {key:"apiKey",label:"API Key",type:"password",required:true,secret:true},
-      {key:"fromNumber",label:"Sender Number",type:"text",required:true,placeholder:"+983000505"},
+      {key:"fromNumber",label:"Sender Number",type:"text",required:true,placeholder:"3000505"},
       {key:"apiUrl",label:"API URL",type:"url",placeholder:"https://edge.ippanel.com/v1/api/send"}
     ]
   }
