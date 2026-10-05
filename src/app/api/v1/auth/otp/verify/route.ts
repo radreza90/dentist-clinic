@@ -11,7 +11,9 @@ const input=z.object({
 });
 
 function normalizePhone(value:string){
-  return value.replace(/[۰-۹]/g,(d)=>String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[^\d+]/g,"");
+  return value
+    .replace(/[۰-۹]/g,d=>String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
+    .replace(/[^\d+]/g,"");
 }
 
 export async function POST(req:Request){
