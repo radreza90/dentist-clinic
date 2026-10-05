@@ -107,7 +107,10 @@ class ZarinPalGateway implements PaymentGateway{
 export async function paymentGateway(provider?:string):Promise<PaymentGateway>{
   const active=await getIntegration("payment",provider,!provider);
   if(!active)throw new Error("No active payment gateway is configured in the admin panel");
-  if(active.item.provider==="mock")return new MockGateway();
+  if(active.item.provider==="mock"){
+    if(process.env.NODE_ENV==="production")throw new Error("Mock payment gateway is disabled in production");
+    return new MockGateway();
+  }
   if(active.item.provider==="zarinpal")return new ZarinPalGateway(active.config);
   throw new Error("Unsupported payment module: "+active.item.provider);
 }
