@@ -64,8 +64,8 @@ export function CategoryManager({title,endpoint,backHref}:{title:string;endpoint
         <input required value={form.name.fa} onChange={e=>setForm({...form,name:{...form.name,fa:e.target.value}})} placeholder="نام فارسی"/>
         <input value={form.name.en} onChange={e=>setForm({...form,name:{...form.name,en:e.target.value}})} placeholder="English name" dir="ltr"/>
       </div>
-      <textarea value={form.description?.fa||""} onChange={e=>setForm({...form,description:{...form.description,fa:e.target.value}})} placeholder="توضیحات فارسی" rows={3}/>
-      <textarea value={form.description?.en||""} onChange={e=>setForm({...form,description:{...form.description,en:e.target.value}})} placeholder="English description" dir="ltr" rows={3}/>
+      <textarea value={form.description?.fa||""} onChange={e=>setForm({...form,description:{fa:e.target.value,en:form.description?.en||""}})} placeholder="توضیحات فارسی" rows={3}/>
+      <textarea value={form.description?.en||""} onChange={e=>setForm({...form,description:{fa:form.description?.fa||"",en:e.target.value}})} placeholder="English description" dir="ltr" rows={3}/>
       <div style={{display:"flex",gap:10}}>
         <button type="submit" disabled={saving}>{saving?"در حال ذخیره…":form._id?"ذخیره تغییرات":"ایجاد دسته‌بندی"}</button>
         {form._id&&<button type="button" onClick={reset}>انصراف</button>}
