@@ -43,7 +43,7 @@ export async function PUT(req:Request){
     await connectDB();
     const menu=await MenuModel.findOneAndUpdate(
       {location:data.location},
-      {$set:{key:data.key,name:data.name,location:data.location,items:data.items.map(({_id,...rest})=>rest),updatedBy:auth.sub}},
+      {$set:{key:data.key,name:data.name,location:data.location,items:data.items,updatedBy:auth.sub}},
       {upsert:true,new:true,runValidators:true}
     ).lean();
     return ok(menu);
