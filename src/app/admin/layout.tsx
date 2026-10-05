@@ -10,6 +10,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <nav style={{ display:"flex", flexWrap:"wrap", gap:16, marginTop:12 }}>
             <Link href="/admin">داشبورد</Link>
             <Link href="/admin/content">محتوا</Link>
+            <Link href="/admin/menus">منوها</Link>
             <Link href="/admin/appointments">نوبت‌ها</Link>
             <Link href="/admin/schedules">برنامه نوبت‌دهی</Link>
             <Link href="/admin/media">رسانه</Link>
