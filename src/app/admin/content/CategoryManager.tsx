@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type Localized={fa:string;en:string};
 type Category={_id:string;slug:string;name:Localized;description?:Localized};
@@ -16,7 +16,7 @@ export function CategoryManager({title,endpoint,backHref}:{title:string;endpoint
   const [error,setError]=useState("");
   const [message,setMessage]=useState("");
 
-  async function load(){
+  const load=useCallback(async()=>{
     setLoading(true);setError("");
     try{
       const r=await fetch(endpoint+"?limit=100",{cache:"no-store"});
@@ -25,8 +25,8 @@ export function CategoryManager({title,endpoint,backHref}:{title:string;endpoint
       setItems(p.data?.items||[]);
     }catch(e){setError(e instanceof Error?e.message:"خطا");}
     finally{setLoading(false);}
-  }
-  useEffect(()=>{void load();},[endpoint]);
+  },[endpoint]);
+  useEffect(()=>{void load();},[load]);
 
   function reset(){setForm(empty());setMessage("");}
 
