@@ -83,7 +83,7 @@ export default function IntegrationsAdmin(){
       const r=await fetch("/api/v1/admin/integrations/"+item.id+"/test",{method:"POST"});
       const p=await r.json();
       if(!r.ok||!p.success)throw new Error(p.error?.message||"بررسی تنظیمات ناموفق بود");
-      setMessage(p.data?.message||"تنظیمات معتبر است.");
+      setMessage(p.data?.message||"اتصال بررسی شد.");
       await load();
     }catch(e){setError(e instanceof Error?e.message:"بررسی ناموفق بود");await load();}
     finally{setTesting(null);}
