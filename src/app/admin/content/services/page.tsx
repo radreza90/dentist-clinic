@@ -1,6 +1,7 @@
 /* generated admin page */
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { RichEditor } from "@/components/editor/RichEditor";
 import { MediaPicker } from "@/components/editor/MediaPicker";
@@ -107,7 +108,7 @@ export default function ServicesAdmin(){
   return <main>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,flexWrap:"wrap"}}>
       <div><h1>خدمات</h1><p style={{color:"#666"}}>مدیریت خدمات، قیمت رزرو، محتوای غنی و SEO.</p></div>
-      <a href="/admin/content">بازگشت به محتوا</a>
+      <Link href="/admin/content">بازگشت به محتوا</Link>
     </div>
 
     <form onSubmit={submit} style={{background:"#fff",border:"1px solid #ddd",borderRadius:14,padding:20,margin:"24px 0",display:"grid",gap:14}}>
