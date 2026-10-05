@@ -8,10 +8,10 @@ import { MediaPicker } from "@/components/editor/MediaPicker";
 
 type Localized={fa:string;en:string};
 type Service={_id:string;slug:string;title:Localized;excerpt?:Localized;status?:string;bookingFee?:number;currency?:string};
-type ServiceForm={slug:string;title:Localized;excerpt:Localized;content:Localized;bookingFee:number;currency:string;coverMediaId:string|null;status:string;seo:{title:Localized;description:Localized;canonical:Localized;keywords:string;index:boolean;follow:boolean}};
+type ServiceForm={slug:string;title:Localized;excerpt:Localized;content:Localized;suitableFor:Localized;benefits:Localized;limitations:Localized;careInstructions:Localized;faqs:{question:Localized;answer:Localized}[];bookingFee:number;currency:string;coverMediaId:string|null;status:string;seo:{title:Localized;description:Localized;canonical:Localized;keywords:string;index:boolean;follow:boolean}};
 
 const empty:ServiceForm={
-  slug:"",title:{fa:"",en:""},excerpt:{fa:"",en:""},content:{fa:"",en:""},bookingFee:0,currency:"IRR",coverMediaId:null,status:"draft",
+  slug:"",title:{fa:"",en:""},excerpt:{fa:"",en:""},content:{fa:"",en:""},suitableFor:{fa:"",en:""},benefits:{fa:"",en:""},limitations:{fa:"",en:""},careInstructions:{fa:"",en:""},faqs:[],bookingFee:0,currency:"IRR",coverMediaId:null,status:"draft",
   seo:{title:{fa:"",en:""},description:{fa:"",en:""},canonical:{fa:"",en:""},keywords:"",index:true,follow:true}
 };
 
@@ -79,6 +79,11 @@ export default function ServicesAdmin(){
         title:d.title||{fa:"",en:""},
         excerpt:d.excerpt||{fa:"",en:""},
         content:d.content||{fa:"",en:""},
+        suitableFor:d.suitableFor||{fa:"",en:""},
+        benefits:d.benefits||{fa:"",en:""},
+        limitations:d.limitations||{fa:"",en:""},
+        careInstructions:d.careInstructions||{fa:"",en:""},
+        faqs:Array.isArray(d.faqs)?d.faqs.map((x:{question?:Localized;answer?:Localized})=>({question:x.question||{fa:"",en:""},answer:x.answer||{fa:"",en:""}})):[],
         bookingFee:d.bookingFee||0,
         currency:d.currency||"IRR",
         coverMediaId:d.coverMediaId?String(d.coverMediaId):null,
@@ -134,6 +139,39 @@ export default function ServicesAdmin(){
       <RichEditor value={form.content.fa} onChange={value=>setForm({...form,content:{...form.content,fa:value}})}/>
       <label>English content</label>
       <RichEditor value={form.content.en} onChange={value=>setForm({...form,content:{...form.content,en:value}})} placeholder="Write the service content…"/>
+
+      <details>
+        <summary style={{cursor:"pointer",fontWeight:700}}>محتوای تخصصی خدمت</summary>
+        <div style={{display:"grid",gap:14,paddingTop:14}}>
+          <label>برای چه کسانی مناسب است — فارسی</label>
+          <RichEditor value={form.suitableFor.fa} onChange={value=>setForm({...form,suitableFor:{...form.suitableFor,fa:value}})}/>
+          <label>Suitable for — English</label>
+          <RichEditor value={form.suitableFor.en} onChange={value=>setForm({...form,suitableFor:{...form.suitableFor,en:value}})} placeholder="Who is this treatment suitable for?"/>
+          <label>مزایا — فارسی</label>
+          <RichEditor value={form.benefits.fa} onChange={value=>setForm({...form,benefits:{...form.benefits,fa:value}})}/>
+          <label>Benefits — English</label>
+          <RichEditor value={form.benefits.en} onChange={value=>setForm({...form,benefits:{...form.benefits,en:value}})} placeholder="Benefits"/>
+          <label>محدودیت‌ها — فارسی</label>
+          <RichEditor value={form.limitations.fa} onChange={value=>setForm({...form,limitations:{...form.limitations,fa:value}})}/>
+          <label>Limitations — English</label>
+          <RichEditor value={form.limitations.en} onChange={value=>setForm({...form,limitations:{...form.limitations,en:value}})} placeholder="Limitations"/>
+          <label>مراقبت‌های بعد از درمان — فارسی</label>
+          <RichEditor value={form.careInstructions.fa} onChange={value=>setForm({...form,careInstructions:{...form.careInstructions,fa:value}})}/>
+          <label>Aftercare — English</label>
+          <RichEditor value={form.careInstructions.en} onChange={value=>setForm({...form,careInstructions:{...form.careInstructions,en:value}})} placeholder="Aftercare instructions"/>
+          <div>
+            <h3>سؤالات متداول</h3>
+            {form.faqs.map((faq,index)=><div key={index} style={{border:"1px solid #ddd",borderRadius:10,padding:12,marginBottom:10,display:"grid",gap:10}}>
+              <div style={{display:"flex",justifyContent:"space-between",gap:10}}><strong>سؤال {index+1}</strong><button type="button" onClick={()=>setForm({...form,faqs:form.faqs.filter((_,i)=>i!==index)})}>حذف</button></div>
+              <input value={faq.question.fa} onChange={e=>setForm({...form,faqs:form.faqs.map((x,i)=>i===index?{...x,question:{...x.question,fa:e.target.value}}:x)})} placeholder="سؤال فارسی"/>
+              <input value={faq.question.en} onChange={e=>setForm({...form,faqs:form.faqs.map((x,i)=>i===index?{...x,question:{...x.question,en:e.target.value}}:x)})} placeholder="Question in English" dir="ltr"/>
+              <RichEditor value={faq.answer.fa} onChange={value=>setForm({...form,faqs:form.faqs.map((x,i)=>i===index?{...x,answer:{...x.answer,fa:value}}:x)})}/>
+              <RichEditor value={faq.answer.en} onChange={value=>setForm({...form,faqs:form.faqs.map((x,i)=>i===index?{...x,answer:{...x.answer,en:value}}:x)})} placeholder="Answer in English"/>
+            </div>)}
+            <button type="button" onClick={()=>setForm({...form,faqs:[...form.faqs,{question:{fa:"",en:""},answer:{fa:"",en:""}}]})}>افزودن سؤال متداول</button>
+          </div>
+        </div>
+      </details>
 
       <details>
         <summary style={{cursor:"pointer",fontWeight:700}}>تنظیمات SEO</summary>
