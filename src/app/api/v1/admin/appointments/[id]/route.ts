@@ -1,4 +1,4 @@
-import { AppointmentModel, DoctorModel } from "@/models";
+import { AppointmentModel, DoctorModel, SiteSettingsModel } from "@/models";
 import { connectDB } from "@/lib/db";
 import { getAuth,can } from "@/lib/rbac";
 import { ok,fail } from "@/lib/api";
@@ -7,6 +7,36 @@ import { sendSms } from "@/lib/sms";
 
 function formatAppointmentDate(date:Date,timeZone:string){
   return new Intl.DateTimeFormat("fa-IR",{timeZone,dateStyle:"medium",timeStyle:"short"}).format(date);
+}
+
+function buildConfirmationSms(
+  template:string,
+  includeAppointmentTime:boolean,
+  includeDoctorName:boolean,
+  appointmentTime:string,
+  doctorName:string
+){
+  let message=(template||"نوبت شما تأیید شد. زمان: {appointmentTime}").trim();
+
+  if(includeAppointmentTime&&message.includes("{appointmentTime}")){
+    message=message.replace(/\{appointmentTime\}/g,appointmentTime);
+  }else{
+    message=message.replace(/\{appointmentTime\}/g,"");
+    if(includeAppointmentTime&&!message.includes(appointmentTime)){
+      message=(message+"\nزمان نوبت: "+appointmentTime).trim();
+    }
+  }
+
+  if(includeDoctorName&&doctorName&&message.includes("{doctorName}")){
+    message=message.replace(/\{doctorName\}/g,doctorName);
+  }else{
+    message=message.replace(/\{doctorName\}/g,"");
+    if(includeDoctorName&&doctorName&&!message.includes(doctorName)){
+      message=(message+"\nپزشک: "+doctorName).trim();
+    }
+  }
+
+  return message.replace(/\s+\n/g,"\n").replace(/\n\s+/g,"\n").trim();
 }
 
 const input=z.object({
@@ -47,14 +77,27 @@ export async function PUT(req:Request,{params}:{params:Promise<{id:string}>}){
     }},{new:true,runValidators:true}).populate("serviceId","title bookingFee currency").populate("doctorId","name").lean();
 
     if(item&&nextStatus==="confirmed"&&wasNotConfirmed&&item.patientSnapshot?.phone){
-      try{
-        const doctorName=item.doctorId?.name?.fa||item.doctorId?.name?.en||"";
-        const serviceName=item.serviceId?.title?.fa||item.serviceId?.title?.en||"نوبت شما";
-        const doctorPart=doctorName?" پزشک: "+doctorName:"";
-        await sendSms(item.patientSnapshot.phone,"نوبت شما تأیید شد. "+serviceName+doctorPart+" زمان: "+formatAppointmentDate(new Date(item.startsAt),item.timezone||process.env.CLINIC_TIMEZONE||"Asia/Tehran"));
-        await AppointmentModel.updateOne({_id:item._id,confirmedSmsSentAt:null},{$set:{confirmedSmsSentAt:new Date()}});
-      }catch{
-        // SMS failure must not roll back the appointment confirmation.
+      const siteSettings=await (await connectDB(),SiteSettingsModel.findOne({key:"main"}).select("appointmentSms timezone").lean());
+      const smsSettings=siteSettings?.appointmentSms;
+      if(smsSettings?.enabled!==false&&smsSettings?.includeAppointmentTime!==false){
+        try{
+          const doctorName=item.doctorId?.name?.fa||item.doctorId?.name?.en||"";
+          const appointmentTime=formatAppointmentDate(
+            new Date(item.startsAt),
+            item.timezone||siteSettings?.timezone||process.env.CLINIC_TIMEZONE||"Asia/Tehran"
+          );
+          const message=buildConfirmationSms(
+            smsSettings?.template||"نوبت شما تأیید شد. زمان: {appointmentTime}",
+            smsSettings?.includeAppointmentTime!==false,
+            smsSettings?.includeDoctorName===true,
+            appointmentTime,
+            doctorName
+          );
+          if(message)await sendSms(item.patientSnapshot.phone,message);
+          await AppointmentModel.updateOne({_id:item._id,confirmedSmsSentAt:null},{$set:{confirmedSmsSentAt:new Date()}});
+        }catch{
+          // SMS failure must not roll back the appointment confirmation.
+        }
       }
     }
 
