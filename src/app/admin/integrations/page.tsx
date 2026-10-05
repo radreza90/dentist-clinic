@@ -13,9 +13,11 @@ type Integration={
 export default function IntegrationsAdmin(){
   const [items,setItems]=useState<Integration[]>([]);
   const [configs,setConfigs]=useState<Record<string,Record<string,string>>>({});
+  const [testRecipients,setTestRecipients]=useState<Record<string,string>>({});
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState<string|null>(null);
   const [testing,setTesting]=useState<string|null>(null);
+  const [smsTesting,setSmsTesting]=useState<string|null>(null);
   const [message,setMessage]=useState("");
   const [error,setError]=useState("");
 
@@ -77,16 +79,38 @@ export default function IntegrationsAdmin(){
     await save({...item,enabled:true,isDefault:true});
   }
 
-  async function test(item:Integration){
+  async function testConnection(item:Integration){
     setTesting(item.id);setMessage("");setError("");
     try{
       const r=await fetch("/api/v1/admin/integrations/"+item.id+"/test",{method:"POST"});
       const p=await r.json();
-      if(!r.ok||!p.success)throw new Error(p.error?.message||"بررسی تنظیمات ناموفق بود");
+      if(!r.ok||!p.success)throw new Error(p.error?.message||"بررسی اتصال ناموفق بود");
       setMessage(p.data?.message||"اتصال بررسی شد.");
       await load();
     }catch(e){setError(e instanceof Error?e.message:"بررسی ناموفق بود");await load();}
     finally{setTesting(null);}
+  }
+
+  async function sendSmsTest(item:Integration){
+    const recipient=testRecipients[item.id]?.trim()||"";
+    if(!recipient){
+      setError("برای تست واقعی IPPanel ابتدا شماره مقصد را وارد کنید.");
+      return;
+    }
+
+    setSmsTesting(item.id);setMessage("");setError("");
+    try{
+      const r=await fetch("/api/v1/admin/integrations/"+item.id+"/sms-test",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({recipient})
+      });
+      const p=await r.json();
+      if(!r.ok||!p.success)throw new Error(p.error?.message||"ارسال پیامک تستی ناموفق بود");
+      setMessage(p.data?.message||"پیامک تستی ارسال شد.");
+      await load();
+    }catch(e){setError(e instanceof Error?e.message:"ارسال پیامک تستی ناموفق بود");await load();}
+    finally{setSmsTesting(null);}
   }
 
   function card(item:Integration){
@@ -115,9 +139,24 @@ export default function IntegrationsAdmin(){
         })}
       </div>}
 
+      {item.provider==="ippanel"&&item.type==="sms"&&<div style={{border:"1px dashed #bbb",borderRadius:12,padding:14,display:"grid",gap:10}}>
+        <strong>تست واقعی ارسال پیامک</strong>
+        <span style={{fontSize:13,color:"#666"}}>این دکمه واقعاً یک SMS ارسال می‌کند و فقط بعد از وارد کردن شماره مقصد فعال می‌شود.</span>
+        <input
+          value={testRecipients[item.id]||""}
+          onChange={e=>setTestRecipients(prev=>({...prev,[item.id]:e.target.value}))}
+          placeholder="مثال: 09120000000"
+          dir="ltr"
+          inputMode="tel"
+        />
+        <button type="button" onClick={()=>void sendSmsTest(item)} disabled={smsTesting===item.id||!item.enabled}>
+          {smsTesting===item.id?"در حال ارسال…":"ارسال پیامک تستی"}
+        </button>
+      </div>}
+
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         <button type="button" onClick={()=>void save(item)} disabled={saving===item.id}>{saving===item.id?"در حال ذخیره…":"ذخیره تنظیمات"}</button>
-        <button type="button" onClick={()=>void test(item)} disabled={testing===item.id}>{testing===item.id?"در حال بررسی…":"بررسی تنظیمات"}</button>
+        <button type="button" onClick={()=>void testConnection(item)} disabled={testing===item.id}>{testing===item.id?"در حال بررسی…":"بررسی اتصال بدون ارسال"}</button>
       </div>
 
       {item.lastTestAt&&<small style={{color:item.lastTestOk?"green":"#b42318"}}>{item.lastTestMessage||"نتیجه آخرین بررسی"} · {new Date(item.lastTestAt).toLocaleString("fa-IR")}</small>}
