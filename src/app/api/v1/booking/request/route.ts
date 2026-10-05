@@ -6,6 +6,7 @@ import { signAccessToken, signRefreshToken, verifyOtpVerificationToken } from "@
 import { fail } from "@/lib/api";
 import { weekdayForDate } from "@/lib/timezone";
 import { setSessionCookies } from "@/lib/session";
+import { normalizeIranianMobile } from "@/lib/phone";
 
 const input=z.object({
   verificationToken:z.string().min(20),
@@ -17,11 +18,6 @@ const input=z.object({
   customerNote:z.string().trim().max(2000).optional()
 });
 
-function normalizePhone(value:string){
-  return value
-    .replace(/[۰-۹]/g,d=>String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
-    .replace(/[^\d+]/g,"");
-}
 
 function localDateParts(date:Date,timeZone:string){
   const parts=new Intl.DateTimeFormat("en-CA",{
@@ -38,7 +34,8 @@ export async function POST(req:Request){
   try{
     const p=input.safeParse(await req.json());
     if(!p.success)return fail("Invalid booking payload",422,p.error.flatten());
-    const phone=normalizePhone(p.data.phone);
+    let phone:string;
+    try{phone=normalizeIranianMobile(p.data.phone);}catch{return fail("Invalid phone number",422);}
     const verification=await verifyOtpVerificationToken(p.data.verificationToken);
     if(verification.purpose!=="booking"||verification.phone!==phone)return fail("OTP verification does not match the phone number",403);
     const startsAt=new Date(p.data.startsAt),endsAt=new Date(p.data.endsAt);
