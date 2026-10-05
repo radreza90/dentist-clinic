@@ -1,5 +1,5 @@
 import { connectDB } from "@/lib/db";
-import { AppointmentModel, ServiceModel } from "@/models";
+import { AppointmentModel } from "@/models";
 import { sendSms } from "@/lib/sms";
 import { ok,fail } from "@/lib/api";
 
