@@ -14,6 +14,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin/schedules">برنامه نوبت‌دهی</Link>
             <Link href="/admin/media">رسانه</Link>
             <Link href="/admin/settings">تنظیمات</Link>
+            <Link href="/admin/integrations">ماژول‌ها</Link>
             <Link href="/account">پنل بیمار</Link>
             <Link href="/" target="_blank" rel="noreferrer">مشاهده سایت</Link>
             <LogoutButton />
