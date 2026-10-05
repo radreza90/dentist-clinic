@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     if (!auth) return fail("Authentication required", 401);
     await connectDB();
 
-    const filter = can(auth.role, "appointments:read")
+    const filter = can(String(auth.role), "appointments:read")
       ? { status: { $nin: ["cancelled"] } }
       : { userId: String(auth.sub), status: { $nin: ["cancelled"] } };
 
