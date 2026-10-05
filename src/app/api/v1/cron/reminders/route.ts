@@ -72,3 +72,11 @@ async function runReminders(req:Request){
     return ok({processed:items.length,sent24,sent2,failed});
   }catch(e){return fail(e instanceof Error?e.message:"Reminder job failed",500);}
 }
+
+export async function POST(req:Request){
+  return runReminders(req);
+}
+
+export async function GET(req:Request){
+  return runReminders(req);
+}
