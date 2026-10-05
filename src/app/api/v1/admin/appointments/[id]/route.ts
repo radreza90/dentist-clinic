@@ -50,7 +50,7 @@ export async function PUT(req:Request,{params}:{params:Promise<{id:string}>}){
       try{
         const doctorName=item.doctorId?.name?.fa||item.doctorId?.name?.en||"";
         const serviceName=item.serviceId?.title?.fa||item.serviceId?.title?.en||"نوبت شما";
-        const doctorPart=doctorName?" پزشک: "+doctorName+"":";
+        const doctorPart=doctorName?" پزشک: "+doctorName:"";
         await sendSms(item.patientSnapshot.phone,"نوبت شما تأیید شد. "+serviceName+doctorPart+" زمان: "+formatAppointmentDate(new Date(item.startsAt),item.timezone||process.env.CLINIC_TIMEZONE||"Asia/Tehran"));
         await AppointmentModel.updateOne({_id:item._id,confirmedSmsSentAt:null},{$set:{confirmedSmsSentAt:new Date()}});
       }catch{
