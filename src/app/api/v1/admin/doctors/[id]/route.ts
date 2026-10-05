@@ -6,7 +6,6 @@ import { sanitizeLocalizedHtml } from "@/lib/sanitize";
 import { z } from "zod";
 import { createContentRevision } from "@/lib/revisions";
 import { seoInput } from "@/lib/validators";
-import { createContentRevision } from "@/lib/revisions";
 
 const localized=z.object({fa:z.string().max(5000).optional(),en:z.string().max(5000).optional()});
 const text=z.object({fa:z.string().max(100000).optional(),en:z.string().max(100000).optional()});
