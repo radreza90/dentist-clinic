@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/db";
 import { IntegrationModel } from "@/models";
-import { decryptIntegrationConfig, encryptIntegrationConfig } from "@/lib/integrations/crypto";
+import { decryptIntegrationConfig } from "@/lib/integrations/crypto";
 import { integrationRegistry, getIntegrationDefinition, type IntegrationDefinition } from "@/lib/integrations/registry";
 
 export async function syncIntegrationRegistry(){
