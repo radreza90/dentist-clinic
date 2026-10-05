@@ -12,7 +12,9 @@ const input=z.object({
 });
 
 function normalizePhone(value:string){
-  return value.replace(/[۰-۹]/g,(d)=>String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[^d+]/g,"");
+  return value
+    .replace(/[۰-۹]/g,d=>String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
+    .replace(/[^\d+]/g,"");
 }
 
 export async function POST(req:Request){
@@ -24,14 +26,16 @@ export async function POST(req:Request){
 
     await connectDB();
     const windowStart=new Date(Date.now()-10*60*1000);
-    const recent=await OtpCodeModel.countDocuments({phone,purpose:p.data.purpose,createdAt:{$gte:windowStart}});
+    const recent=await OtpCodeModel.countDocuments({
+      phone,purpose:p.data.purpose,createdAt:{$gte:windowStart}
+    });
     if(recent>=5)return fail("Too many OTP requests. Try again later.",429);
 
     const code=String(randomInt(100000,1000000));
     const codeHash=await hashPassword(code);
     const expiresAt=new Date(Date.now()+5*60*1000);
     await OtpCodeModel.create({phone,codeHash,purpose:p.data.purpose,expiresAt});
-    await sendSms(phone,`کد تأیید کلینیک: ${code}`);
+    await sendSms(phone,"کد تأیید کلینیک: "+code);
     return ok({expiresAt});
   }catch(e){return fail(e instanceof Error?e.message:"Unable to send OTP",500);}
 }
