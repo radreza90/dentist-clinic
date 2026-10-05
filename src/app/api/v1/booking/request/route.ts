@@ -72,7 +72,8 @@ export async function POST(req:Request){
     const existingUser=await UserModel.findOne({phone}).select("_id role isActive").lean();
     const user=existingUser||await UserModel.create({phone,role:"patient",isActive:true,firstName:p.data.name});
     const requiresPayment=(service.bookingFee||0)>0;
-    if(requiresPayment&&!await getIntegration("payment"))return fail("No active payment gateway is configured in the admin panel",503);
+    const paymentIntegration=requiresPayment?await getIntegration("payment"):null;
+    if(requiresPayment&&!paymentIntegration)return fail("No active payment gateway is configured in the admin panel",503);
     const appointment=await AppointmentModel.create({
       userId:user._id,
       patientSnapshot:{phone,name:p.data.name},
@@ -89,7 +90,7 @@ export async function POST(req:Request){
       userId:user._id,
       amount:service.bookingFee,
       currency:service.currency||"IRR",
-      gateway:process.env.PAYMENT_DRIVER||"unconfigured",
+      gateway:paymentIntegration?.item.provider||"unconfigured",
       status:"pending"
     }):null;
 
