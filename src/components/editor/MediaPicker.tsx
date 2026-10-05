@@ -52,7 +52,7 @@ export function MediaPicker({open,mode,onClose,onSelect}:{open:boolean;mode:Mode
       </div>
       <div style={{margin:"16px 0",display:"flex",alignItems:"center",gap:10}}>
         <label style={{border:"1px solid #ddd",padding:"8px 12px",borderRadius:8,cursor:"pointer"}}>
-          {uploading?"در حال آپلود…":\`آپلود \${label}\`}
+          {uploading?"در حال آپلود…":`آپلود ${label}`}
           <input hidden type="file" accept={accept} onChange={upload} disabled={uploading}/>
         </label>
         <button type="button" onClick={()=>void load()}>بازخوانی</button>
