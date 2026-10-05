@@ -1,8 +1,5 @@
 import mongoose from "mongoose";
 
-const mongoUri = process.env.MONGODB_URI;
-if (!mongoUri) throw new Error("MONGODB_URI is not configured");
-
 type MongooseCache = {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
@@ -23,6 +20,8 @@ if (!globalThis.mongooseCache) {
 
 export async function connectDB() {
   if (cached.conn) return cached.conn;
+  const mongoUri = process.env.MONGODB_URI;
+  if (!mongoUri) throw new Error("MONGODB_URI is not configured");
 
   if (!cached.promise) {
     cached.promise = mongoose.connect(mongoUri, {
