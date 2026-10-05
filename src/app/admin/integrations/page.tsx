@@ -90,7 +90,6 @@ export default function IntegrationsAdmin(){
   }
 
   function card(item:Integration){
-    const hasSecret=Object.values(item.secretSet||{}).some(Boolean);
     return <article key={item.id} style={{background:"#fff",border:"1px solid #ddd",borderRadius:16,padding:20,display:"grid",gap:14}}>
       <div style={{display:"flex",justifyContent:"space-between",gap:16,alignItems:"start",flexWrap:"wrap"}}>
         <div><h2 style={{margin:"0 0 6px"}}>{item.name.fa||item.provider}</h2><p style={{margin:0,color:"#666"}}>{item.description?.fa||""}</p><small dir="ltr">{item.provider}</small></div>
@@ -109,7 +108,7 @@ export default function IntegrationsAdmin(){
               type={field.type==="password"?"password":"text"}
               value={value}
               onChange={e=>setConfig(item.id,field.key,e.target.value)}
-              placeholder={field.secret&&hasSecret?"مقدار فعلی حفظ می‌شود؛ برای تغییر مقدار جدید وارد کنید":field.placeholder}
+              placeholder={field.secret&&item.secretSet[field.key]?"مقدار فعلی حفظ می‌شود؛ برای تغییر مقدار جدید وارد کنید":field.placeholder}
               dir={field.type==="url"||field.secret?"ltr":undefined}
             />
           </label>;
