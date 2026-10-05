@@ -28,6 +28,19 @@ const siteSchema=new mongoose.Schema({
 const User=mongoose.models.SeedUser||mongoose.model("SeedUser",userSchema,"users");
 const Service=mongoose.models.SeedService||mongoose.model("SeedService",serviceSchema,"services");
 const Site=mongoose.models.SeedSite||mongoose.model("SeedSite",siteSchema,"sitesettings");
+const integrationSchema=new mongoose.Schema({
+  key:{type:String,unique:true,index:true},
+  type:String,
+  provider:String,
+  name:{fa:String,en:String},
+  description:{fa:String,en:String},
+  enabled:Boolean,
+  isDefault:Boolean,
+  configEncrypted:String,
+  configVersion:Number
+},{timestamps:true});
+const Integration=mongoose.models.SeedIntegration||mongoose.model("SeedIntegration",integrationSchema,"integrations");
+
 
 await User.findOneAndUpdate(
   {email:adminEmail.toLowerCase()},
@@ -72,6 +85,32 @@ await Site.findOneAndUpdate(
   {key:"main",timezone:process.env.CLINIC_TIMEZONE||"Asia/Tehran"},
   {upsert:true,setDefaultsOnInsert:true}
 );
+
+const integrationModules=[
+  ["payment","mock","درگاه آزمایشی","Mock Gateway","درگاه آزمایشی فقط برای توسعه","Development-only mock gateway",process.env.NODE_ENV!=="production"],
+  ["payment","zarinpal","زرین‌پال","ZarinPal","درگاه پرداخت آنلاین زرین‌پال","ZarinPal online payment gateway",false],
+  ["sms","console","پیامک کنسول","Console SMS","نمایش پیامک در لاگ؛ فقط برای توسعه","Logs SMS to the server console; development only",process.env.NODE_ENV!=="production"],
+  ["sms","ippanel","IPPanel","IPPanel","پنل پیامک IPPanel برای OTP و یادآوری نوبت","IPPanel SMS for OTP and appointment reminders",false],
+];
+
+for(const [type,provider,fa,en,descriptionFa,descriptionEn,enabled] of integrationModules){
+  await Integration.findOneAndUpdate(
+    {type,provider},
+    {
+      key:type+"."+provider,
+      type,
+      provider,
+      name:{fa,en},
+      description:{fa:descriptionFa,en:descriptionEn},
+      configEncrypted:"",
+      configVersion:1,
+      enabled,
+      isDefault:enabled
+    },
+    {upsert:true,setDefaultsOnInsert:true}
+  );
+}
+
 
 await mongoose.disconnect();
 console.log("Seed completed.");
