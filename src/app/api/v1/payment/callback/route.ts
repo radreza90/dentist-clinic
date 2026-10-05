@@ -32,7 +32,7 @@ export async function GET(req:Request){
     if(!payment.authority||payment.authority!==authority)return fail("Invalid payment authority",400);
 
     const status=url.searchParams.get("Status");
-    if(activePaymentProvider==="zarinpal"&&status!=="OK"){
+    if(payment.gateway==="zarinpal"&&status!=="OK"){
       await PaymentModel.updateOne(
         {_id:payment._id,status:"pending"},
         {$set:{status:"failed",callbackData:Object.fromEntries(url.searchParams.entries())}}
@@ -42,7 +42,7 @@ export async function GET(req:Request){
     }
 
     const raw=Object.fromEntries(url.searchParams.entries());
-    const verified=await (await paymentGateway()).verify({authority,amount:payment.amount,raw});
+    const verified=await (await paymentGateway(payment.gateway||undefined)).verify({authority,amount:payment.amount,raw});
     if(!verified.ok){
       await PaymentModel.updateOne(
         {_id:payment._id,status:"pending"},
