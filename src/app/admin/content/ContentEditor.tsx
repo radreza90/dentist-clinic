@@ -682,7 +682,7 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
           if (picker === "certificate") insertCertificateMedia(selected._id);
           setPicker(null);
           setEditingCertificate(null);
-          setMedia((current) => current.some((item) => item._id === selected._id) ? current : [...current, selected]);
+          setMedia((current) => current.some((item) => item._id === selected._id) ? current : [...current, { ...selected, alt: selected.alt ? { fa: selected.alt.fa || "", en: selected.alt.en || "" } : undefined, title: selected.title ? { fa: selected.title.fa || "", en: selected.title.en || "" } : undefined }]);
         }}
       />
     </main>
