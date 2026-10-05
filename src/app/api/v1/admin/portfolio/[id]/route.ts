@@ -6,7 +6,6 @@ import { sanitizeLocalizedHtml } from "@/lib/sanitize";
 import { z } from "zod";
 import { createContentRevision } from "@/lib/revisions";
 import { seoInput } from "@/lib/validators";
-import { createContentRevision } from "@/lib/revisions";
 const localized=z.object({fa:z.string().max(5000).optional(),en:z.string().max(5000).optional()});
 const text=z.object({fa:z.string().max(100000).optional(),en:z.string().max(100000).optional()});
 const input=z.object({slug:z.string().trim().min(1).max(160),title:localized,description:text.optional(),treatment:text.optional(),categoryIds:z.array(z.string()).optional(),beforeMediaIds:z.array(z.string()).optional(),afterMediaIds:z.array(z.string()).optional(),doctorId:z.string().nullable().optional(),privacy:z.object({consentStatus:z.enum(["unknown","granted","revoked"]).optional(),hideIdentity:z.boolean().optional()}).optional(),seo:seoInput.optional(),status:z.enum(["draft","published","scheduled","archived"]).optional(),publishedAt:z.coerce.date().nullable().optional(),scheduledAt:z.coerce.date().nullable().optional()}).partial();
