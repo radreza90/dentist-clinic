@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { signAccessToken, verifyAccessToken, verifyRefreshToken } from "@/lib/auth-token";
+import { ACCESS_COOKIE_MAX_AGE } from "@/lib/session";
 
 async function resolveRedirect(request: NextRequest) {
   if (!["GET", "HEAD"].includes(request.method)) return null;
@@ -33,8 +35,51 @@ export async function proxy(request: NextRequest) {
   }
 
   const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
   if (!isInternal) requestHeaders.set("x-public-site", "1");
   else requestHeaders.delete("x-public-site");
+
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+    const accessToken = request.cookies.get("access_token")?.value;
+    const refreshToken = request.cookies.get("refresh_token")?.value;
+
+    if (accessToken) {
+      try {
+        const auth = await verifyAccessToken(accessToken);
+        if (auth.sub && auth.role && auth.role !== "patient") {
+          return NextResponse.next({ request: { headers: requestHeaders } });
+        }
+      } catch {
+        // Attempt to refresh the access token below.
+      }
+    }
+
+    if (refreshToken) {
+      try {
+        const auth = await verifyRefreshToken(refreshToken);
+        if (!auth.sub || !auth.role || auth.role === "patient") {
+          throw new Error("Not authorized");
+        }
+        const accessToken = await signAccessToken(String(auth.sub), String(auth.role));
+        const response = NextResponse.next({ request: { headers: requestHeaders } });
+        response.cookies.set("access_token", accessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: ACCESS_COOKIE_MAX_AGE,
+        });
+        return response;
+      } catch {
+        // Clear invalid sessions and send the user to login.
+      }
+    }
+
+    const response = NextResponse.redirect(new URL("/admin/login", request.url));
+    response.cookies.delete("access_token");
+    response.cookies.delete("refresh_token");
+    return response;
+  }
 
   return NextResponse.next({ request: { headers: requestHeaders } });
 }

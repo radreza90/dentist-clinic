@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { PageModel } from "@/models";
 import { sanitizeLocalizedHtml } from "@/lib/sanitize";
 import { Localized } from "@/components/i18n/Localized";
+import { connectDB } from "@/lib/db";
 
 type Props={params:Promise<{slug:string}>};
 
 export async function generateMetadata({params}:Props):Promise<Metadata>{
+  await connectDB();
   const {slug}=await params;
   const page=await PageModel.findOne({slug,status:"published"}).lean();
   if(!page)return {title:"Page not found"};
@@ -17,6 +19,7 @@ export async function generateMetadata({params}:Props):Promise<Metadata>{
 }
 
 export default async function CmsPage({params}:Props){
+  await connectDB();
   const {slug}=await params;
   const page=await PageModel.findOne({slug,status:"published"}).lean();
   if(!page)notFound();

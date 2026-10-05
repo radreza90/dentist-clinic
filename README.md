@@ -66,4 +66,7 @@ Protect cron endpoints with CRON_SECRET.
 ## Development
 Copy .env.example to .env.local, install dependencies and run npm run dev.
 
+### Initial admin account
+Set `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` in `.env.local` to the credentials you want to use. Make sure `MONGODB_URI` points to the application database, then run `npm run seed`. This creates or updates that account with the `super_admin` role; the seed script also loads `.env.local` automatically.
+
 IPPanel API reference: https://apidoc.ippanel.com/

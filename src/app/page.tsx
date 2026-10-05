@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ServiceModel, DoctorModel, BlogPostModel, PortfolioItemModel, SiteSettingsModel } from "@/models";
 import { Localized } from "@/components/i18n/Localized";
+import { connectDB } from "@/lib/db";
 
 export const dynamic="force-dynamic";
 
 export default async function Home(){
+  await connectDB();
   const [site,services,doctors,posts,cases]=await Promise.all([
     SiteSettingsModel.findOne({key:"main"}).lean(),
     ServiceModel.find({status:"published"}).sort({createdAt:1}).limit(6).lean(),

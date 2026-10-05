@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import nextEnv from "@next/env";
+
+nextEnv.loadEnvConfig(process.cwd());
 
 const uri=process.env.MONGODB_URI;
 if(!uri)throw new Error("MONGODB_URI is required");

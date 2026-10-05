@@ -1,21 +1,24 @@
 import Link from "next/link";
+import localFont from "next/font/local";
+import { headers } from "next/headers";
+import { AdminNavigation } from "./AdminNavigation";
 import { LogoutButton } from "./LogoutButton";
 
-const navigation = [
-  { label: "داشبورد", href: "/admin", icon: "⌂" },
-  { label: "نوبت‌ها", href: "/admin/appointments", icon: "▣" },
-  { label: "برنامه نوبت‌دهی", href: "/admin/schedules", icon: "◫" },
-  { label: "محتوا", href: "/admin/content", icon: "✦" },
-  { label: "رسانه", href: "/admin/media", icon: "▧" },
-  { label: "منوها", href: "/admin/menus", icon: "☰" },
-  { label: "Redirectها", href: "/admin/redirects", icon: "↗" },
-  { label: "تنظیمات", href: "/admin/settings", icon: "⚙" },
-  { label: "ماژول‌ها", href: "/admin/integrations", icon: "◈" },
-];
+const vazirmatn = localFont({
+  src: "../fonts/vazirmatn/Vazirmatn[wght].woff2",
+  variable: "--font-vazirmatn",
+  weight: "100 900",
+  display: "swap",
+});
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const requestHeaders = await headers();
+  if (requestHeaders.get("x-pathname") === "/admin/login") {
+    return <div className={vazirmatn.variable}>{children}</div>;
+  }
+
   return (
-    <div dir="rtl" className="admin-shell">
+    <div dir="rtl" className={`${vazirmatn.variable} admin-shell`}>
       <aside className="admin-sidebar">
         <div>
           <div className="admin-brand">
@@ -27,15 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <div className="admin-nav-section">
             <span className="admin-nav-caption">مدیریت</span>
-            <nav className="admin-nav">
-              {navigation.map((item, index) => (
-                <Link key={item.href} href={item.href} className={index === 0 ? "admin-nav-item active" : "admin-nav-item"}>
-                  <span className="admin-nav-icon">{item.icon}</span>
-                  <span>{item.label}</span>
-                  {index === 0 ? <span className="admin-nav-dot" /> : null}
-                </Link>
-              ))}
-            </nav>
+            <AdminNavigation />
           </div>
         </div>
         <div className="admin-sidebar-footer">

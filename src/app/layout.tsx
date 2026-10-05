@@ -19,9 +19,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <div style={{ position: "fixed", top: 12, insetInlineEnd: 12, zIndex: 100 }}>
-            <LocaleSwitcher />
-          </div>
+          {isPublicSite && (
+            <div style={{ position: "fixed", top: 12, insetInlineEnd: 12, zIndex: 100 }}>
+              <LocaleSwitcher />
+            </div>
+          )}
           {isPublicSite && <SiteHeader />}
           {children}
           {isPublicSite && <SiteFooter />}
