@@ -54,7 +54,10 @@ class IPPanelSmsProvider{
 export async function sendSms(phone:string,message:string){
   const active=await getIntegration("sms");
   if(!active)throw new Error("No active SMS provider is configured in the admin panel");
-  if(active.item.provider==="console")return void await new ConsoleSmsProvider().send(phone,message);
+  if(active.item.provider==="console"){
+    if(process.env.NODE_ENV==="production")throw new Error("Console SMS provider is disabled in production");
+    return void await new ConsoleSmsProvider().send(phone,message);
+  }
   if(active.item.provider==="ippanel")return void await new IPPanelSmsProvider(active.config).send(phone,message);
   throw new Error("Unsupported SMS module: "+active.item.provider);
 }
