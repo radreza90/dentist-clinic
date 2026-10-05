@@ -8,7 +8,7 @@ import { Localized } from "@/components/i18n/Localized";
 type Props={params:Promise<{slug:string}>};
 
 export async function generateMetadata({params}:Props):Promise<Metadata>{
-  const {slug}=await params; const item=await PortfolioItemModel.findOne({slug,status:"published"}).lean();
+  const {slug}=await params; const item=await PortfolioItemModel.findOne({slug,status:"published","privacy.consentStatus":"granted"}).lean();
   if(!item)return {title:"Case not found"};
   const title=item.seo?.title?.fa||item.title?.fa||item.title?.en||"Dental Case";
   return {title,description:item.seo?.description?.fa||item.description?.fa||"",alternates:item.seo?.canonical?.fa?{canonical:item.seo.canonical.fa}:undefined,robots:item.seo?.robots||undefined};
