@@ -467,7 +467,10 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
           <h1 style={{ margin: "10px 0 6px", fontSize: 28 }}>{id ? `ویرایش ${title}` : `افزودن ${title}`}</h1>
           <p style={{ margin: 0, color: "#667085" }}>اطلاعات فارسی و انگلیسی، رسانه، محتوای تخصصی و تنظیمات SEO را از همین صفحه مدیریت کنید.</p>
         </div>
-        <Link href={`/admin/content/${base}`} style={{ padding: "9px 13px", border: "1px solid #d0d5dd", borderRadius: 10, background: "#fff" }}>بازگشت به فهرست</Link>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {id&&<Link href={"/admin/content/revisions?contentType="+encodeURIComponent(kind)+"&contentId="+encodeURIComponent(id)} style={{padding:"9px 13px",border:"1px solid #d0d5dd",borderRadius:10,background:"#fff"}}>تاریخچه نسخه‌ها</Link>}
+          <Link href={`/admin/content/${base}`} style={{ padding: "9px 13px", border: "1px solid #d0d5dd", borderRadius: 10, background: "#fff" }}>بازگشت به فهرست</Link>
+        </div>
       </div>
 
       {optionsError && <div style={{ marginBottom: 16, padding: 12, borderRadius: 10, background: "#fff7ed", color: "#9a3412" }}>{optionsError}</div>}
