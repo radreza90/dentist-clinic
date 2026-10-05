@@ -19,6 +19,8 @@ export default function AppointmentsAdmin(){
   const [date,setDate]=useState("");
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
+  const [notes,setNotes]=useState<Record<string,string>>({});
+  const [savingNote,setSavingNote]=useState<string|null>(null);
 
   const load=useCallback(async()=>{
     setLoading(true);setError("");
@@ -39,6 +41,17 @@ export default function AppointmentsAdmin(){
     const p=await r.json();
     if(!r.ok||!p.success){setError(p.error?.message||"تخصیص پزشک ناموفق بود");return;}
     await load();
+  }
+
+  async function saveNote(id:string){
+    setSavingNote(id);setError("");
+    try{
+      const r=await fetch("/api/v1/admin/appointments/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({adminNote:notes[id]||""})});
+      const p=await r.json();
+      if(!r.ok||!p.success)throw new Error(p.error?.message||"ذخیره یادداشت ناموفق بود");
+      await load();
+    }catch(e){setError(e instanceof Error?e.message:"ذخیره یادداشت ناموفق بود");}
+    finally{setSavingNote(null);}
   }
 
   async function updateStatus(id:string,nextStatus:string){
@@ -71,7 +84,7 @@ export default function AppointmentsAdmin(){
       {loading?<p style={{padding:20}}>در حال بارگذاری…</p>:appointments.length===0?<p style={{padding:20}}>نوبتی یافت نشد.</p>:
       <table style={{width:"100%",borderCollapse:"collapse"}}>
         <thead><tr>
-          <th style={{padding:12,textAlign:"right"}}>بیمار</th><th>خدمت</th><th>زمان</th><th>پرداخت</th><th>پزشک</th><th>وضعیت</th>
+          <th style={{padding:12,textAlign:"right"}}>بیمار</th><th>خدمت</th><th>زمان</th><th>پرداخت</th><th>پزشک</th><th>وضعیت</th><th>یادداشت</th>
         </tr></thead>
         <tbody>{appointments.map(item=><tr key={item._id} style={{borderTop:"1px solid #eee"}}>
           <td style={{padding:12}}><strong>{item.patientSnapshot?.name||"—"}</strong><div dir="ltr">{item.patientSnapshot?.phone||""}</div></td>
@@ -93,6 +106,18 @@ export default function AppointmentsAdmin(){
               <option value="cancelled">لغو شده</option>
               <option value="no_show">عدم مراجعه</option>
             </select>
+          </td>
+          <td style={{minWidth:240,padding:10}}>
+            <textarea
+              value={notes[item._id]??item.adminNote??""}
+              onChange={e=>setNotes(prev=>({...prev,[item._id]:e.target.value}))}
+              rows={3}
+              placeholder="یادداشت داخلی ادمین"
+              style={{width:"100%",boxSizing:"border-box"}}
+            />
+            <button type="button" onClick={()=>void saveNote(item._id)} disabled={savingNote===item._id}>
+              {savingNote===item._id?"در حال ذخیره…":"ذخیره یادداشت"}
+            </button>
           </td>
         </tr>)}</tbody>
       </table>}
