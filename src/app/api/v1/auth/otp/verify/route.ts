@@ -31,7 +31,11 @@ export async function POST(req:Request){
       return fail("OTP is invalid",400);
     }
 
-    await OtpCodeModel.updateOne({_id:otp._id},{$set:{usedAt:new Date()}});
+    const consumed=await OtpCodeModel.updateOne(
+      {_id:otp._id,usedAt:null},
+      {$set:{usedAt:new Date()}}
+    );
+    if(consumed.modifiedCount!==1)return fail("OTP has already been used",400);
     const verificationToken=await signOtpVerificationToken(phone,p.data.purpose);
     return ok({verificationToken,phone,purpose:p.data.purpose});
   }catch(e){return fail(e instanceof Error?e.message:"Unable to verify OTP",500);}
