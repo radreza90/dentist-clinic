@@ -2,7 +2,7 @@ import { verifyAccessToken } from "./auth";
 
 export const permissions = {
   super_admin: ["*"],
-  admin: ["content:read","content:write","media:write","appointments:read","appointments:write","settings:read"],
+  admin: ["content:read","content:write","media:write","appointments:read","appointments:write","settings:read","settings:write"],
   manager: ["content:read","appointments:read","appointments:write","media:write"],
   editor: ["content:read","content:write","media:write"],
   patient: ["appointments:self"],
