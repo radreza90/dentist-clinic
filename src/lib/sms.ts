@@ -1,5 +1,5 @@
 import { normalizeIranianMobile } from "@/lib/phone";
-import { getActiveIntegration } from "@/lib/integrations/service";
+import { getIntegration } from "@/lib/integrations/service";
 
 class ConsoleSmsProvider{
   async send(phone:string,message:string){
@@ -52,7 +52,7 @@ class IPPanelSmsProvider{
 }
 
 export async function sendSms(phone:string,message:string){
-  const active=await getActiveIntegration("sms");
+  const active=await getIntegration("sms");
   if(!active)throw new Error("No active SMS provider is configured in the admin panel");
   if(active.item.provider==="console")return void await new ConsoleSmsProvider().send(phone,message);
   if(active.item.provider==="ippanel")return void await new IPPanelSmsProvider(active.config).send(phone,message);
