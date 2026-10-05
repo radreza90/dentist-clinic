@@ -3,7 +3,7 @@ import { getMenu,buildMenuTree,type MenuTreeItem } from "@/lib/menus";
 import { Localized } from "@/components/i18n/Localized";
 
 function Item({item}:{item:MenuTreeItem}){
-  const external=item.type==="external"||/^https?:\\/\\//i.test(item.href);
+  const external=item.type==="external"||/^https?:\/\//i.test(item.href);
   const link=external?<a href={item.href} target={item.targetBlank?"_blank":undefined} rel={item.targetBlank?"noreferrer":undefined}><Localized value={item.label}/></a>:<Link href={item.href} target={item.targetBlank?"_blank":undefined}><Localized value={item.label}/></Link>;
   return <li style={{position:"relative"}}>
     {link}
