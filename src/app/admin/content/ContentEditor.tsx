@@ -48,6 +48,7 @@ type FormState = {
   afterMediaIds: string[];
   doctorId: string | null;
   authorId: string;
+  privacy: { consentStatus: "unknown" | "granted" | "revoked"; hideIdentity: boolean };
   faqs: Faq[];
   status: "draft" | "published" | "scheduled" | "archived";
   publishedAt: string;
@@ -96,6 +97,7 @@ const emptyForm = (kind: Kind): FormState => ({
   afterMediaIds: [],
   doctorId: null,
   authorId: "",
+  privacy: { consentStatus: "unknown", hideIdentity: true },
   faqs: [],
   status: "draft",
   publishedAt: "",
@@ -317,6 +319,7 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
           afterMediaIds: Array.isArray(data.afterMediaIds) ? data.afterMediaIds.map(String) : [],
           doctorId: data.doctorId ? String(data.doctorId) : null,
           authorId: data.authorId ? String(data.authorId) : "",
+          privacy: { consentStatus: ((data.privacy as { consentStatus?: string } | undefined)?.consentStatus === "granted" || (data.privacy as { consentStatus?: string } | undefined)?.consentStatus === "revoked") ? (data.privacy as { consentStatus: "granted" | "revoked" }).consentStatus : "unknown", hideIdentity: (data.privacy as { hideIdentity?: boolean } | undefined)?.hideIdentity !== false },
           faqs: Array.isArray(data.faqs) ? data.faqs.map((item: Record<string, unknown>) => {
             const question = item.question as Localized | undefined;
             const answer = item.answer as Localized | undefined;
@@ -410,6 +413,7 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
         body.beforeMediaIds = form.beforeMediaIds;
         body.afterMediaIds = form.afterMediaIds;
         body.doctorId = form.doctorId;
+        body.privacy = form.privacy;
         body.scheduledAt = fromLocalDateTime(form.scheduledAt);
         body.publishedAt = fromLocalDateTime(form.publishedAt);
       } else {
@@ -597,6 +601,13 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
                 <label style={{ display: "grid", gap: 7 }}><span>پزشک مرتبط</span><select value={form.doctorId || ""} onChange={(e) => update("doctorId", e.target.value || null)}><option value="">بدون پزشک</option>{doctors.map((doctor) => <option key={doctor._id} value={doctor._id}>{doctor.label}</option>)}</select></label>
                 <div style={{ display: "grid", gap: 8 }}><strong>دسته‌بندی‌ها</strong>{categories.length ? categories.map((category) => <label key={category._id} style={{ display: "flex", gap: 9, alignItems: "center" }}><input type="checkbox" checked={form.categoryIds.includes(category._id)} onChange={() => setForm((current) => ({ ...current, categoryIds: current.categoryIds.includes(category._id) ? current.categoryIds.filter((idValue) => idValue !== category._id) : [...current.categoryIds, category._id] }))} />{category.label}</label>) : <Pill>دسته‌ای وجود ندارد</Pill>}</div>
                 <label style={{ display: "grid", gap: 7 }}><span>زمان انتشار</span><input type="datetime-local" value={form.publishedAt} onChange={(e) => update("publishedAt", e.target.value)} /></label>
+              </FieldGrid>
+            </Section>
+
+            <Section title="حریم خصوصی و رضایت بیمار" description="نمونه‌کار فقط وقتی در سایت عمومی نمایش داده می‌شود که رضایت انتشار ثبت شده باشد.">
+              <FieldGrid>
+                <label style={{ display: "grid", gap: 7 }}><span>وضعیت رضایت</span><select value={form.privacy.consentStatus} onChange={(e) => setForm((current) => ({ ...current, privacy: { ...current.privacy, consentStatus: e.target.value as "unknown" | "granted" | "revoked" } }))}><option value="unknown">نامشخص</option><option value="granted">رضایت ثبت شده</option><option value="revoked">رضایت لغو شده</option></select></label>
+                <label style={{ display: "flex", gap: 9, alignItems: "center", paddingTop: 28 }}><input type="checkbox" checked={form.privacy.hideIdentity} onChange={(e) => setForm((current) => ({ ...current, privacy: { ...current.privacy, hideIdentity: e.target.checked } }))} /> هویت بیمار در سایت نمایش داده نشود</label>
               </FieldGrid>
             </Section>
 
