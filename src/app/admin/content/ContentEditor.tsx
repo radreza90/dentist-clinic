@@ -117,7 +117,7 @@ function toLocalDateTime(value?: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
-  return \`\${date.getFullYear()}-\${pad(date.getMonth() + 1)}-\${pad(date.getDate())}T\${pad(date.getHours())}:\${pad(date.getMinutes())}\`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function fromLocalDateTime(value: string) {
@@ -168,8 +168,8 @@ function LocalizedField({
   return (
     <div style={{ display: "grid", gap: 10 }}>
       <strong style={{ fontSize: 13 }}>{label}</strong>
-      {editor("fa", \`\${label} فارسی\`)}
-      {editor("en", \`\${label} English\`)}
+      {editor("fa", `${label} فارسی`)}
+      {editor("en", `${label} English`)}
     </div>
   );
 }
@@ -266,7 +266,7 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
       setLoading(false);
       return;
     }
-    fetch(\`\${endpoint}/\${id}\`, { cache: "no-store" })
+    fetch(`${endpoint}/${id}`, { cache: "no-store" })
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok || !payload.success) throw new Error(payload.error?.message || "خطا در دریافت محتوا");
@@ -422,7 +422,7 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
         body.content = form.content;
       }
 
-      const response = await fetch(id ? \`\${endpoint}/\${id}\` : endpoint, {
+      const response = await fetch(id ? `${endpoint}/${id}` : endpoint, {
         method: id ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -430,7 +430,7 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
       const payload = await response.json();
       if (!response.ok || !payload.success) throw new Error(payload.error?.message || "ذخیره انجام نشد");
       setMessage("تغییرات با موفقیت ذخیره شد.");
-      if (!id && payload.data?._id) window.history.replaceState(null, "", \`/admin/content/\${base}/\${payload.data._id}\`);
+      if (!id && payload.data?._id) window.history.replaceState(null, "", `/admin/content/${base}/${payload.data._id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "ذخیره ناموفق بود");
     } finally {
@@ -464,10 +464,10 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 22 }}>
         <div>
           <Pill tone={id ? "#eef6ff" : "#ecfdf3"}>{id ? "ویرایش" : "ایجاد جدید"}</Pill>
-          <h1 style={{ margin: "10px 0 6px", fontSize: 28 }}>{id ? \`ویرایش \${title}\` : \`افزودن \${title}\`}</h1>
+          <h1 style={{ margin: "10px 0 6px", fontSize: 28 }}>{id ? `ویرایش ${title}` : `افزودن ${title}`}</h1>
           <p style={{ margin: 0, color: "#667085" }}>اطلاعات فارسی و انگلیسی، رسانه، محتوای تخصصی و تنظیمات SEO را از همین صفحه مدیریت کنید.</p>
         </div>
-        <Link href={\`/admin/content/\${base}\`} style={{ padding: "9px 13px", border: "1px solid #d0d5dd", borderRadius: 10, background: "#fff" }}>بازگشت به فهرست</Link>
+        <Link href={`/admin/content/${base}`} style={{ padding: "9px 13px", border: "1px solid #d0d5dd", borderRadius: 10, background: "#fff" }}>بازگشت به فهرست</Link>
       </div>
 
       {optionsError && <div style={{ marginBottom: 16, padding: 12, borderRadius: 10, background: "#fff7ed", color: "#9a3412" }}>{optionsError}</div>}
@@ -664,8 +664,8 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
         {error && <div style={{ padding: 12, borderRadius: 10, background: "#fff1f3", color: "#b42318" }}>{error}</div>}
         {message && <div style={{ padding: 12, borderRadius: 10, background: "#ecfdf3", color: "#027a48" }}>{message}</div>}
         <div style={{ position: "sticky", bottom: 12, display: "flex", justifyContent: "flex-start", gap: 10, padding: 12, border: "1px solid #e4e7ec", borderRadius: 14, background: "rgba(255,255,255,.94)", backdropFilter: "blur(8px)" }}>
-          <button disabled={saving} type="submit" style={{ background: "#111827", color: "#fff", border: 0, borderRadius: 10, padding: "11px 18px", fontWeight: 700 }}>{saving ? "در حال ذخیره…" : id ? "ذخیره تغییرات" : \`ایجاد \${title}\`}</button>
-          <Link href={\`/admin/content/\${base}\`} style={{ padding: "10px 14px", border: "1px solid #d0d5dd", borderRadius: 10, background: "#fff" }}>انصراف</Link>
+          <button disabled={saving} type="submit" style={{ background: "#111827", color: "#fff", border: 0, borderRadius: 10, padding: "11px 18px", fontWeight: 700 }}>{saving ? "در حال ذخیره…" : id ? "ذخیره تغییرات" : `ایجاد ${title}`}</button>
+          <Link href={`/admin/content/${base}`} style={{ padding: "10px 14px", border: "1px solid #d0d5dd", borderRadius: 10, background: "#fff" }}>انصراف</Link>
         </div>
       </form>
 
