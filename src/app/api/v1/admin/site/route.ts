@@ -15,13 +15,13 @@ export async function GET(req:Request){
 
 export async function PUT(req:Request){
   const auth=await getAuth(req);
-  if(!auth||!can(String(auth.role),"settings:read"))return fail("Forbidden",403);
+  if(!auth||!can(String(auth.role),"settings:write"))return fail("Forbidden",403);
   try{
     const parsed=siteSettingsInput.safeParse(await req.json());
     if(!parsed.success)return fail("Invalid site settings",422,parsed.error.flatten());
     await connectDB();
     const item=await SiteSettingsModel.findOneAndUpdate(
-      {key:"main"},{$set:{...parsed.data,key:"main"}},{upsert:true,new:true,runValidators:true}
+      {key:"main"},{$set:{...parsed.data,key:"main",updatedBy:auth.sub}},{upsert:true,new:true,runValidators:true}
     ).lean();
     return ok(item);
   }catch(e){return fail(e instanceof Error?e.message:"Update failed",500);}
