@@ -13,7 +13,7 @@ function format(date:Date,timeZone:string){
   return new Intl.DateTimeFormat("fa-IR",{timeZone,dateStyle:"medium",timeStyle:"short"}).format(date);
 }
 
-export async function POST(req:Request){
+async function runReminders(req:Request){
   if(!authorized(req))return fail("Unauthorized",401);
   try{
     await connectDB();
