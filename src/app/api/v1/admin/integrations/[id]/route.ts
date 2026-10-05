@@ -19,11 +19,11 @@ export async function PUT(req:Request,{params}:{params:Promise<{id:string}>}){
     if(!definition)return fail("Integration module is not supported",422);
     const body=await req.json() as {enabled?:boolean;isDefault?:boolean;config?:Record<string,unknown>};
     const existing=decryptIntegrationConfig(item.configEncrypted);
-    const config=await validateIntegrationConfig(definition,body.config||{},existing);
+    const config=body.config===undefined?existing:await validateIntegrationConfig(definition,body.config,existing);
     const enabled=body.enabled===undefined?item.enabled:Boolean(body.enabled);
     const isDefault=body.isDefault===undefined?item.isDefault:Boolean(body.isDefault);
     if(isDefault&&!enabled)return fail("A disabled integration cannot be the default",422);
-    if(enabled)Object.assign(item,{configEncrypted:encryptIntegrationConfig(config)});
+    if(enabled)Object.assign(item,{configEncrypted:Object.keys(config).length?encryptIntegrationConfig(config):""});
     if(!enabled&&body.config===undefined)Object.assign(item,{});
     item.enabled=enabled;
     item.isDefault=isDefault;
