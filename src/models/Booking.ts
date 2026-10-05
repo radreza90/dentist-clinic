@@ -13,6 +13,7 @@ const Appointment=new Schema({
   adminNote:String,
   reminder24SentAt:Date,
   reminder2SentAt:Date,
+  confirmedSmsSentAt:Date,
   status:{type:String,enum:["pending_payment","paid_pending_assignment","confirmed","completed","cancelled","no_show"],default:"pending_payment",index:true},
   paymentStatus:{type:String,enum:["unpaid","pending","paid","failed","refunded"],default:"unpaid"},
   source:{type:String,enum:["web","mobile","admin"],default:"web"}
