@@ -9,6 +9,15 @@ function formatAppointmentDate(date:Date,timeZone:string){
   return new Intl.DateTimeFormat("fa-IR",{timeZone,dateStyle:"medium",timeStyle:"short"}).format(date);
 }
 
+const allowedTransitions:Record<string,string[]>={
+  pending_payment:["paid_pending_assignment","cancelled"],
+  paid_pending_assignment:["confirmed","cancelled"],
+  confirmed:["completed","cancelled","no_show"],
+  completed:[],
+  cancelled:[],
+  no_show:[],
+};
+
 function buildConfirmationSms(
   template:string,
   includeAppointmentTime:boolean,
@@ -55,6 +64,7 @@ export async function PUT(req:Request,{params}:{params:Promise<{id:string}>}){
 
     if(p.data.doctorId!==undefined){
       if(current.paymentStatus!=="paid")return fail("Doctor can only be assigned after payment",409);
+      if(!["paid_pending_assignment","confirmed"].includes(current.status))return fail("Doctor cannot be assigned for this appointment status",409);
       if(p.data.doctorId){
         const doctor=await DoctorModel.findOne({_id:p.data.doctorId,status:"published"}).select("_id").lean();
         if(!doctor)return fail("Doctor not found",404);
@@ -67,6 +77,7 @@ export async function PUT(req:Request,{params}:{params:Promise<{id:string}>}){
     }
 
     const nextStatus=p.data.status||(p.data.doctorId? "confirmed":undefined);
+    if(nextStatus&&nextStatus!==current.status&&!allowedTransitions[current.status]?.includes(nextStatus))return fail("Invalid appointment status transition",409);
     if(nextStatus==="confirmed"&&current.paymentStatus!=="paid")return fail("Paid appointment is required before confirmation",409);
     const wasNotConfirmed=current.status!=="confirmed";
     const item=await AppointmentModel.findByIdAndUpdate(id,{$set:{
