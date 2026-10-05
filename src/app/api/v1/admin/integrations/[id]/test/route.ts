@@ -37,7 +37,7 @@ export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){
 
     if(item.provider==="ippanel"){
       const apiUrl=String(config.apiUrl||"https://edge.ippanel.com/v1/api/send").replace(/\/$/,"");
-      const countUrl=apiUrl.replace(/\/send$/,"/send/banks/counts");
+      const countUrl=apiUrl.replace(/\/send$/,"/send/banks/provinces");
       const result=await checkReachability(countUrl,{"Accept":"application/json","Authorization":String(config.apiKey||"")});
       let payload:{meta?:{status?:boolean;message?:string}}|null=null;
       try{payload=result.text?JSON.parse(result.text):null;}catch{}
