@@ -31,8 +31,13 @@ export async function POST(req:Request){
     const code=String(randomInt(100000,1000000));
     const codeHash=await hashPassword(code);
     const expiresAt=new Date(Date.now()+5*60*1000);
-    await OtpCodeModel.create({phone,codeHash,purpose:p.data.purpose,expiresAt});
-    await sendSms(phone,"کد تأیید کلینیک: "+code);
+    const otp=await OtpCodeModel.create({phone,codeHash,purpose:p.data.purpose,expiresAt});
+    try{
+      await sendSms(phone,"کد تأیید کلینیک: "+code);
+    }catch(error){
+      await OtpCodeModel.deleteOne({_id:otp._id});
+      throw error;
+    }
     return ok({expiresAt});
   }catch(e){return fail(e instanceof Error?e.message:"Unable to send OTP",500);}
 }
