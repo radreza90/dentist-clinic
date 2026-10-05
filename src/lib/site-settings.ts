@@ -17,5 +17,11 @@ export const siteSettingsInput = z.object({
   logoMediaId:z.string().nullable().optional(),
   faviconMediaId:z.string().nullable().optional(),
   defaultSeo:z.unknown().optional(),
+  appointmentSms:z.object({
+    enabled:z.boolean().optional(),
+    includeAppointmentTime:z.boolean().optional(),
+    includeDoctorName:z.boolean().optional(),
+    template:z.string().trim().max(1000).optional()
+  }).optional(),
   timezone:z.string().trim().max(100).optional(),
 });
