@@ -26,3 +26,21 @@ export async function getMenu(location:"header"|"footer"){
       .map((item)=>({...item,_id:String(item._id),parentId:item.parentId||null}))
   };
 }
+
+export type MenuTreeItem=MenuItemRecord&{children:MenuTreeItem[]};
+
+export function buildMenuTree(items:MenuItemRecord[]){
+  const byId=new Map(items.map(item=>[item._id,{...item,children:[] as MenuTreeItem[]}] as const));
+  const roots:MenuTreeItem[]=[];
+  for(const item of byId.values()){
+    const parent=item.parentId?byId.get(item.parentId):undefined;
+    if(parent)parent.children.push(item);
+    else roots.push(item);
+  }
+  const sort=(list:MenuTreeItem[])=>{
+    list.sort((a,b)=>a.position-b.position);
+    list.forEach(item=>sort(item.children));
+  };
+  sort(roots);
+  return roots;
+}
