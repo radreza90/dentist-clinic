@@ -60,7 +60,9 @@ export async function validateIntegrationConfig(definition:IntegrationDefinition
   return config;
 }
 
-export function publicIntegration(item:InstanceType<typeof IntegrationModel>){
+type IntegrationRecord={_id:unknown;key:string;type:"payment"|"sms";provider:string;name:{fa:string;en:string};description?:{fa?:string;en?:string};enabled:boolean;isDefault:boolean;configEncrypted:string;lastTestAt?:Date|null;lastTestOk?:boolean|null;lastTestMessage?:string|null};
+
+export function publicIntegration(item:IntegrationRecord){
   const definition=getIntegrationDefinition(item.type,item.provider);
   const config=definition?.fields.reduce<Record<string,string>>((acc,field)=>{
     acc[field.key]="";
