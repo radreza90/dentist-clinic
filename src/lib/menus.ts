@@ -16,14 +16,15 @@ export async function getMenu(location:"header"|"footer"){
   await connectDB();
   const menu=await MenuModel.findOne({location}).lean();
   if(!menu)return null;
+  const items=menu.items as unknown as MenuItemRecord[];
   return {
     key:menu.key,
     name:menu.name,
     location:menu.location,
-    items:menu.items
-      .filter((item)=>item.enabled)
-      .sort((a,b)=>a.position-b.position)
-      .map((item)=>({...item,_id:String(item._id),parentId:item.parentId||null}))
+    items:items
+      .filter((item:MenuItemRecord)=>item.enabled)
+      .sort((a:MenuItemRecord,b:MenuItemRecord)=>a.position-b.position)
+      .map((item:MenuItemRecord)=>({...item,_id:String(item._id),parentId:item.parentId||null}))
   };
 }
 
