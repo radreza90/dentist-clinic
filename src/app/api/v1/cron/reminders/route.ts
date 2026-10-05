@@ -32,21 +32,42 @@ async function runReminders(req:Request){
     }).limit(100).lean();
 
     let sent24=0,sent2=0,failed=0;
+    const staleBefore=new Date(now-5*60*1000);
     for(const appointment of items){
       const phone=appointment.patientSnapshot?.phone;
       if(!phone)continue;
       const is24=appointment.startsAt>=h24Start&&appointment.startsAt<h24End&&!appointment.reminder24SentAt;
-      const message="یادآوری نوبت کلینیک: "+format(new Date(appointment.startsAt),appointment.timezone||process.env.CLINIC_TIMEZONE||"Asia/Tehran");
+      const sentField=is24?"reminder24SentAt":"reminder2SentAt";
+      const processingField=is24?"reminder24ProcessingAt":"reminder2ProcessingAt";
+      const claimAt=new Date();
+      const claimed=await AppointmentModel.findOneAndUpdate(
+        {
+          _id:appointment._id,
+          status:"confirmed",
+          [sentField]:null,
+          $or:[{[processingField]:null},{[processingField]:{$lt:staleBefore}}],
+        },
+        {$set:{[processingField]:claimAt}},
+        {new:true}
+      ).lean();
+      if(!claimed)continue;
+
+      const message="یادآوری نوبت کلینیک: "+format(new Date(claimed.startsAt),claimed.timezone||process.env.CLINIC_TIMEZONE||"Asia/Tehran");
       try{
         await sendSms(phone,message);
-        if(is24){
-          await AppointmentModel.updateOne({_id:appointment._id,reminder24SentAt:null},{$set:{reminder24SentAt:new Date()}});
-          sent24++;
-        }else{
-          await AppointmentModel.updateOne({_id:appointment._id,reminder2SentAt:null},{$set:{reminder2SentAt:new Date()}});
-          sent2++;
-        }
-      }catch{failed++;}
+        const updated=await AppointmentModel.updateOne(
+          {_id:claimed._id,status:"confirmed",[sentField]:null,[processingField]:claimAt},
+          {$set:{[sentField]:new Date()},$unset:{[processingField]:1}}
+        );
+        if(!updated.matchedCount)continue;
+        if(is24)sent24++;else sent2++;
+      }catch{
+        failed++;
+        await AppointmentModel.updateOne(
+          {_id:claimed._id,[processingField]:claimAt},
+          {$unset:{[processingField]:1}}
+        );
+      }
     }
     return ok({processed:items.length,sent24,sent2,failed});
   }catch(e){return fail(e instanceof Error?e.message:"Reminder job failed",500);}
