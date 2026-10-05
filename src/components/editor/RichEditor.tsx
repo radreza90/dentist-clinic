@@ -49,8 +49,8 @@ export function RichEditor({value,onChange,placeholder="محتوا را وارد
   const node=editor.state.doc.nodeAt(selected.from);
   const isMedia=node?.type.name==="image"||node?.type.name==="video";
 
-  function alignMedia(align:string){if(node?.type.name==="image")editor.commands.updateAttributes("image",{align});if(node?.type.name==="video")editor.commands.updateAttributes("video",{align});}
-  function setVideoSize(width:number){if(node?.type.name==="video")editor.commands.updateAttributes("video",{width,height:Math.round(width*9/16)});}
+  function alignMedia(align:string){if(node?.type.name==="image")editor!.commands.updateAttributes("image",{align});if(node?.type.name==="video")editor!.commands.updateAttributes("video",{align});}
+  function setVideoSize(width:number){if(node?.type.name==="video")editor!.commands.updateAttributes("video",{width,height:Math.round(width*9/16)});}
 
   return <div style={{border:"1px solid #d7d9dd",borderRadius:12,overflow:"hidden",background:"#fff"}}>
     <div style={{display:"flex",flexWrap:"wrap",gap:6,padding:8,borderBottom:"1px solid #ddd",background:"#fafafa"}}>
