@@ -3,16 +3,23 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { UserModel } from "@/models";
 import { signAccessToken, signRefreshToken, verifyOtpVerificationToken } from "@/lib/auth";
+import { normalizeIranianMobile } from "@/lib/phone";
 import { fail } from "@/lib/api";
 import { setSessionCookies } from "@/lib/session";
 
-const input=z.object({verificationToken:z.string().min(20),phone:z.string().trim().min(10).max(20),name:z.string().trim().max(120).optional()});
-function normalizePhone(value:string){return value.replace(/[۰-۹]/g,d=>String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[^d+]/g,"");}
+const input=z.object({
+  verificationToken:z.string().min(20),
+  phone:z.string().trim().min(10).max(20),
+  name:z.string().trim().max(120).optional()
+});
 
 export async function POST(req:Request){
   try{
-    const p=input.safeParse(await req.json());if(!p.success)return fail("Invalid OTP login payload",422,p.error.flatten());
-    const phone=normalizePhone(p.data.phone);const verification=await verifyOtpVerificationToken(p.data.verificationToken);
+    const p=input.safeParse(await req.json());
+    if(!p.success)return fail("Invalid OTP login payload",422,p.error.flatten());
+    let phone:string;
+    try{phone=normalizeIranianMobile(p.data.phone);}catch{return fail("Invalid phone number",422);}
+    const verification=await verifyOtpVerificationToken(p.data.verificationToken);
     if(verification.purpose!=="login"||verification.phone!==phone)return fail("OTP verification does not match the phone number",403);
     await connectDB();
     const user=await UserModel.findOneAndUpdate(
