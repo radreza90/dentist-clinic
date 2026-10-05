@@ -96,7 +96,7 @@ const integrationModules=[
 for(const [type,provider,fa,en,descriptionFa,descriptionEn,enabled] of integrationModules){
   await Integration.findOneAndUpdate(
     {type,provider},
-    {
+    {$setOnInsert:{
       key:type+"."+provider,
       type,
       provider,
@@ -106,8 +106,8 @@ for(const [type,provider,fa,en,descriptionFa,descriptionEn,enabled] of integrati
       configVersion:1,
       enabled,
       isDefault:enabled
-    },
-    {upsert:true,setDefaultsOnInsert:true}
+    }},
+    {upsert:true}
   );
 }
 
