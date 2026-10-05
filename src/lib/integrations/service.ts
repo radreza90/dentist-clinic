@@ -8,12 +8,13 @@ export async function syncIntegrationRegistry(){
   for(const definition of integrationRegistry){
     await IntegrationModel.updateOne(
       {type:definition.type,provider:definition.provider},
-      {$setOnInsert:{
+      {$set:{
+        name:definition.name,
+        description:definition.description
+      },$setOnInsert:{
         key:definition.type+"."+definition.provider,
         type:definition.type,
         provider:definition.provider,
-        name:definition.name,
-        description:definition.description,
         enabled:false,
         isDefault:false,
         configEncrypted:""
