@@ -1,4 +1,6 @@
-function normalizeIranianMobile(value:string){
+import { normalizeIranianMobile } from "@/lib/phone";
+
+function normalizeIranianMobileLegacy(value:string){
   const raw=value.trim().replace(/[۰-۹]/g,d=>String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[\s().-]/g,"");
   let normalized=raw;
   if(normalized.startsWith("0098"))normalized="+"+normalized.slice(4);
