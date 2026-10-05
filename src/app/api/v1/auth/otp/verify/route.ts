@@ -2,6 +2,7 @@ import { z } from "zod";
 import { connectDB } from "@/lib/db";
 import { OtpCodeModel } from "@/models";
 import { verifyPassword, signOtpVerificationToken } from "@/lib/auth";
+import { normalizeIranianMobile } from "@/lib/phone";
 import { fail, ok } from "@/lib/api";
 
 const input=z.object({
@@ -10,17 +11,13 @@ const input=z.object({
   purpose:z.enum(["booking","login","register"]).default("booking"),
 });
 
-function normalizePhone(value:string){
-  return value
-    .replace(/[۰-۹]/g,d=>String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
-    .replace(/[^\d+]/g,"");
-}
-
 export async function POST(req:Request){
   try{
     const p=input.safeParse(await req.json());
     if(!p.success)return fail("Invalid OTP verification",422,p.error.flatten());
-    const phone=normalizePhone(p.data.phone);
+    let phone:string;
+    try{phone=normalizeIranianMobile(p.data.phone);}catch{return fail("Invalid phone number",422);}
+
     await connectDB();
     const otp=await OtpCodeModel.findOne({
       phone,purpose:p.data.purpose,usedAt:null,expiresAt:{$gt:new Date()},
