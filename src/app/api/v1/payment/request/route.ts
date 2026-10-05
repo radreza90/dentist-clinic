@@ -28,7 +28,7 @@ export async function POST(req:Request){
     const callbackUrl=new URL("/api/v1/payment/callback",baseUrl);
     callbackUrl.searchParams.set("paymentId",String(payment._id));
 
-    const result=await paymentGateway().request({
+    const result=await (await paymentGateway()).request({
       paymentId:String(payment._id),
       amount:payment.amount,
       currency:payment.currency,
