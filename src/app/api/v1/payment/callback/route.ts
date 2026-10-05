@@ -18,9 +18,7 @@ export async function GET(req:Request){
     const url=new URL(req.url);
     const paymentId=url.searchParams.get("paymentId");
     const authority=url.searchParams.get("Authority")||url.searchParams.get("authority");
-    const driver=process.env.PAYMENT_DRIVER||"mock";
-
-    if(!paymentId||!authority)return fail("Payment callback is missing required parameters",400);
+        if(!paymentId||!authority)return fail("Payment callback is missing required parameters",400);
 
     await connectDB();
     const payment=await PaymentModel.findById(paymentId);
@@ -34,7 +32,7 @@ export async function GET(req:Request){
     if(!payment.authority||payment.authority!==authority)return fail("Invalid payment authority",400);
 
     const status=url.searchParams.get("Status");
-    if(driver==="zarinpal"&&status!=="OK"){
+    if(activePaymentProvider==="zarinpal"&&status!=="OK"){
       await PaymentModel.updateOne(
         {_id:payment._id,status:"pending"},
         {$set:{status:"failed",callbackData:Object.fromEntries(url.searchParams.entries())}}
@@ -44,7 +42,7 @@ export async function GET(req:Request){
     }
 
     const raw=Object.fromEntries(url.searchParams.entries());
-    const verified=await paymentGateway().verify({authority,amount:payment.amount,raw});
+    const verified=await (await paymentGateway()).verify({authority,amount:payment.amount,raw});
     if(!verified.ok){
       await PaymentModel.updateOne(
         {_id:payment._id,status:"pending"},
