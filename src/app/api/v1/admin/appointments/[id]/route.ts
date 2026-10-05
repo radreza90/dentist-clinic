@@ -77,9 +77,10 @@ export async function PUT(req:Request,{params}:{params:Promise<{id:string}>}){
     }},{new:true,runValidators:true}).populate("serviceId","title bookingFee currency").populate("doctorId","name").lean();
 
     if(item&&nextStatus==="confirmed"&&wasNotConfirmed&&item.patientSnapshot?.phone){
-      const siteSettings=await (await connectDB(),SiteSettingsModel.findOne({key:"main"}).select("appointmentSms timezone").lean());
+      await connectDB();
+      const siteSettings=await SiteSettingsModel.findOne({key:"main"}).select("appointmentSms timezone").lean();
       const smsSettings=siteSettings?.appointmentSms;
-      if(smsSettings?.enabled!==false&&smsSettings?.includeAppointmentTime!==false){
+      if(smsSettings?.enabled!==false){
         try{
           const doctorName=item.doctorId?.name?.fa||item.doctorId?.name?.en||"";
           const appointmentTime=formatAppointmentDate(
