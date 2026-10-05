@@ -1,3 +1,5 @@
+import { getActiveIntegration } from "@/lib/integrations/service";
+
 export type PaymentRequest={
   paymentId:string;
   amount:number;
@@ -19,11 +21,7 @@ class MockGateway implements PaymentGateway{
     const callback=new URL(input.callbackUrl);
     callback.searchParams.set("mock","1");
     callback.searchParams.set("Authority",authority);
-    return {
-      authority,
-      redirectUrl:callback.toString(),
-      raw:{mock:true},
-    };
+    return {authority,redirectUrl:callback.toString(),raw:{mock:true}};
   }
   async verify(input:{authority:string}){
     return {ok:true,transactionId:"mock-"+input.authority,raw:{mock:true}};
@@ -31,25 +29,15 @@ class MockGateway implements PaymentGateway{
 }
 
 class ZarinPalGateway implements PaymentGateway{
-  private readonly merchantId:string;
-  private readonly apiBase:string;
-  private readonly startPayBase:string;
-  private readonly timeoutMs:number;
-
-  constructor(){
-    const merchantId=process.env.ZARINPAL_MERCHANT_ID?.trim();
-    if(!merchantId)throw new Error("ZARINPAL_MERCHANT_ID is not configured");
-    this.merchantId=merchantId;
-    this.apiBase=(process.env.ZARINPAL_API_BASE_URL||"https://api.zarinpal.com").replace(/\/$/,"");
-    this.startPayBase=(process.env.ZARINPAL_STARTPAY_BASE_URL||"https://www.zarinpal.com/pg/StartPay").replace(/\/$/,"");
-    this.timeoutMs=Number(process.env.ZARINPAL_TIMEOUT_MS||15000);
-  }
+  constructor(private readonly config:Record<string,unknown>){}
 
   private async post(path:string,body:Record<string,unknown>){
+    const apiBase=String(this.config.apiBaseUrl||"https://api.zarinpal.com").replace(/\/$/,"");
+    const timeoutMs=15000;
     const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),this.timeoutMs);
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
     try{
-      const response=await fetch(this.apiBase+path,{
+      const response=await fetch(apiBase+path,{
         method:"POST",
         headers:{"Content-Type":"application/json","Accept":"application/json"},
         body:JSON.stringify(body),
@@ -73,38 +61,37 @@ class ZarinPalGateway implements PaymentGateway{
   }
 
   async request(input:PaymentRequest){
-    if(!Number.isSafeInteger(input.amount)||input.amount<=0){
-      throw new Error("Invalid payment amount; ZarinPal amount must be a positive integer in Rial");
-    }
+    const merchantId=String(this.config.merchantId||"").trim();
+    if(!merchantId)throw new Error("ZarinPal Merchant ID is not configured");
+    if(!Number.isSafeInteger(input.amount)||input.amount<=0)throw new Error("Invalid payment amount; ZarinPal requires a positive integer in Rial");
     if(input.currency!=="IRR")throw new Error("ZarinPal payments must use IRR amounts");
-    const payload={
-      merchant_id:this.merchantId,
+
+    const result=await this.post("/pg/v4/payment/request.json",{
+      merchant_id:merchantId,
       amount:input.amount,
       callback_url:input.callbackUrl,
       description:input.description||"رزرو نوبت کلینیک دندانپزشکی",
       ...(input.metadata&&Object.keys(input.metadata).length?{metadata:input.metadata}:{}),
-    };
-    const result=await this.post("/pg/v4/payment/request.json",payload);
+    });
     const code=result.data?.code;
     const authority=result.data?.authority;
     if(code!==100||!authority){
       const suffix=result.errors?.message?": "+result.errors.message:"";
       throw new Error("ZarinPal payment request failed"+suffix+(code!==undefined?" (code "+code+")":""));
     }
-    return {
-      authority,
-      redirectUrl:this.startPayBase+"/"+encodeURIComponent(authority),
-      raw:result
-    };
+    const startPayBase=String(this.config.startPayBaseUrl||"https://www.zarinpal.com/pg/StartPay").replace(/\/$/,"");
+    return {authority,redirectUrl:startPayBase+"/"+encodeURIComponent(authority),raw:result};
   }
 
   async verify(input:{authority:string;amount:number;raw?:unknown}){
+    const merchantId=String(this.config.merchantId||"").trim();
+    if(!merchantId)throw new Error("ZarinPal Merchant ID is not configured");
     if(!input.authority)throw new Error("ZarinPal authority is required");
-    if(!Number.isSafeInteger(input.amount)||input.amount<=0){
-      throw new Error("Invalid payment amount; ZarinPal amount must be a positive integer in Rial");
-    }
+    if(!Number.isSafeInteger(input.amount)||input.amount<=0)throw new Error("Invalid payment amount; ZarinPal requires a positive integer in Rial");
+    if(typeof input.amount!=="number")throw new Error("Invalid payment amount");
+
     const result=await this.post("/pg/v4/payment/verify.json",{
-      merchant_id:this.merchantId,
+      merchant_id:merchantId,
       amount:input.amount,
       authority:input.authority
     });
@@ -117,12 +104,10 @@ class ZarinPalGateway implements PaymentGateway{
   }
 }
 
-export function paymentGateway():PaymentGateway{
-  const driver=process.env.PAYMENT_DRIVER||"mock";
-  if(driver==="mock"){
-    if(process.env.NODE_ENV==="production")throw new Error("Mock payment gateway cannot be used in production");
-    return new MockGateway();
-  }
-  if(driver==="zarinpal")return new ZarinPalGateway();
-  throw new Error("Unsupported PAYMENT_DRIVER: "+driver);
+export async function paymentGateway():Promise<PaymentGateway>{
+  const active=await getActiveIntegration("payment");
+  if(!active)throw new Error("No active payment gateway is configured in the admin panel");
+  if(active.item.provider==="mock")return new MockGateway();
+  if(active.item.provider==="zarinpal")return new ZarinPalGateway(active.config);
+  throw new Error("Unsupported payment module: "+active.item.provider);
 }
