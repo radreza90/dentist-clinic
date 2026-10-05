@@ -64,12 +64,13 @@ type IntegrationRecord={_id:unknown;key:string;type:"payment"|"sms";provider:str
 
 export function publicIntegration(item:IntegrationRecord){
   const definition=getIntegrationDefinition(item.type,item.provider);
+  const stored=decryptIntegrationConfig(item.configEncrypted);
   const config=definition?.fields.reduce<Record<string,string>>((acc,field)=>{
-    acc[field.key]="";
+    acc[field.key]=field.secret?"":String(stored[field.key]??"");
     return acc;
   },{})||{};
   const secretSet=definition?.fields.reduce<Record<string,boolean>>((acc,field)=>{
-    if(field.secret)acc[field.key]=Boolean(item.configEncrypted);
+    if(field.secret)acc[field.key]=Boolean(stored[field.key]);
     return acc;
   },{})||{};
   return {
