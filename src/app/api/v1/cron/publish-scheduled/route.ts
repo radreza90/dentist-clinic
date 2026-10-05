@@ -26,3 +26,7 @@ export async function POST(req:Request){
     return ok({published:total,at:now});
   }catch(e){return fail(e instanceof Error?e.message:"Scheduled publish job failed",500);}
 }
+
+export async function GET(req:Request){
+  return POST(req);
+}
