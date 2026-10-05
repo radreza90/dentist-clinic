@@ -17,6 +17,20 @@ export type IntegrationDefinition={
 
 export const integrationRegistry:IntegrationDefinition[]=[
   {
+    provider:"mock",
+    type:"payment",
+    name:{fa:"درگاه آزمایشی",en:"Mock Gateway"},
+    description:{fa:"درگاه آزمایشی فقط برای محیط توسعه",en:"Development-only mock payment gateway"},
+    fields:[]
+  },
+  {
+    provider:"console",
+    type:"sms",
+    name:{fa:"پیامک کنسول",en:"Console SMS"},
+    description:{fa:"نمایش پیامک در لاگ برنامه؛ فقط برای توسعه",en:"Logs SMS messages to the server console; development only"},
+    fields:[]
+  },
+  {
     provider:"zarinpal",
     type:"payment",
     name:{fa:"زرین‌پال",en:"ZarinPal"},
