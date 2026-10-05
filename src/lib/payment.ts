@@ -16,9 +16,12 @@ export interface PaymentGateway{
 class MockGateway implements PaymentGateway{
   async request(input:PaymentRequest){
     const authority=input.paymentId;
+    const callback=new URL(input.callbackUrl);
+    callback.searchParams.set("mock","1");
+    callback.searchParams.set("Authority",authority);
     return {
       authority,
-      redirectUrl:input.callbackUrl+"&mock=1&Authority="+encodeURIComponent(authority),
+      redirectUrl:callback.toString(),
       raw:{mock:true},
     };
   }
@@ -73,6 +76,7 @@ class ZarinPalGateway implements PaymentGateway{
     if(!Number.isSafeInteger(input.amount)||input.amount<=0){
       throw new Error("Invalid payment amount; ZarinPal amount must be a positive integer in Rial");
     }
+    if(input.currency!=="IRR")throw new Error("ZarinPal payments must use IRR amounts");
     const payload={
       merchant_id:this.merchantId,
       amount:input.amount,
