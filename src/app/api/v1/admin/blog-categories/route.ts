@@ -2,7 +2,7 @@ import { BlogCategoryModel } from "@/models";
 import { connectDB } from "@/lib/db";
 import { getAuth, can } from "@/lib/rbac";
 import { ok, fail } from "@/lib/api";
-import { seoInput, localizedStringInput, localizedTextInput, contentQuery } from "@/lib/validators";
+import { seoInput, localizedStringInput, localizedTextInput } from "@/lib/validators";
 import { listContent } from "@/lib/content-crud";
 import { z } from "zod";
 
