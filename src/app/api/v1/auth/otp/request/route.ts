@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import { OtpCodeModel } from "@/models";
 import { hashPassword } from "@/lib/auth";
 import { sendSms } from "@/lib/sms";
+import { normalizeIranianMobile } from "@/lib/phone";
 import { fail, ok } from "@/lib/api";
 
 const input=z.object({
@@ -11,18 +12,12 @@ const input=z.object({
   purpose:z.enum(["booking","login","register"]).default("booking"),
 });
 
-function normalizePhone(value:string){
-  return value
-    .replace(/[۰-۹]/g,d=>String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
-    .replace(/[^\d+]/g,"");
-}
-
 export async function POST(req:Request){
   try{
     const p=input.safeParse(await req.json());
     if(!p.success)return fail("Invalid OTP request",422,p.error.flatten());
-    const phone=normalizePhone(p.data.phone);
-    if(phone.replace("+","").length<10)return fail("Invalid phone number",422);
+    let phone:string;
+    try{phone=normalizeIranianMobile(p.data.phone);}catch{return fail("Invalid phone number",422);}
 
     await connectDB();
     const windowStart=new Date(Date.now()-10*60*1000);
