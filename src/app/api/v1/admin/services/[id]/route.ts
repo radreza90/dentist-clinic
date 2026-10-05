@@ -4,6 +4,7 @@ import { getAuth, can } from "@/lib/rbac";
 import { ok, fail } from "@/lib/api";
 import { serviceInput } from "@/lib/validators";
 import { sanitizeLocalizedHtml } from "@/lib/sanitize";
+import { createContentRevision } from "@/lib/revisions";
 
 function sanitizeService(data:any){
   return {
@@ -31,6 +32,7 @@ export async function PUT(req:Request,{params}:{params:Promise<{id:string}>}){
     await connectDB();const {id}=await params;
     if(parsed.data.slug&&await ServiceModel.exists({slug:parsed.data.slug,_id:{$ne:id}}))return fail("A service with this slug already exists",409);
     const item=await ServiceModel.findByIdAndUpdate(id,{$set:{...sanitizeService(parsed.data),updatedBy:auth.sub}},{new:true,runValidators:true}).lean();
+    if(item)await createContentRevision("service",id,item,String(auth.sub),"update");
     return item?ok(item):fail("Service not found",404);
   }catch(e){return fail(e instanceof Error?e.message:"Update failed",500);}
 }
