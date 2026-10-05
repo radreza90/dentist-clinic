@@ -76,7 +76,7 @@ export async function PUT(req:Request,{params}:{params:Promise<{id:string}>}){
       ...(nextStatus==="confirmed"&&wasNotConfirmed?{confirmedSmsSentAt:null}:{}),
     }},{new:true,runValidators:true}).populate("serviceId","title bookingFee currency").populate("doctorId","name").lean();
 
-    if(item&&nextStatus==="confirmed"&&wasNotConfirmed&&item.patientSnapshot?.phone){
+    if(item&&nextStatus==="confirmed"&&!item.confirmedSmsSentAt&&item.patientSnapshot?.phone){
       await connectDB();
       const siteSettings=await SiteSettingsModel.findOne({key:"main"}).select("appointmentSms timezone").lean();
       const smsSettings=siteSettings?.appointmentSms;
