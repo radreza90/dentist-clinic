@@ -6,6 +6,7 @@ import { hashPassword } from "@/lib/auth";
 import { sendSms } from "@/lib/sms";
 import { normalizeIranianMobile } from "@/lib/phone";
 import { fail, ok } from "@/lib/api";
+import { getIntegration } from "@/lib/integrations/service";
 
 const input=z.object({
   phone:z.string().trim().min(10).max(20),
@@ -19,6 +20,7 @@ export async function POST(req:Request){
     let phone:string;
     try{phone=normalizeIranianMobile(p.data.phone);}catch{return fail("Invalid phone number",422);}
 
+    if(!await getIntegration("sms"))return fail("No active SMS provider is configured in the admin panel",503);
     await connectDB();
     const windowStart=new Date(Date.now()-10*60*1000);
     const recent=await OtpCodeModel.countDocuments({
