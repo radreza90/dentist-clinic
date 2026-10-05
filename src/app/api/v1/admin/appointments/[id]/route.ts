@@ -3,6 +3,11 @@ import { connectDB } from "@/lib/db";
 import { getAuth,can } from "@/lib/rbac";
 import { ok,fail } from "@/lib/api";
 import { z } from "zod";
+import { sendSms } from "@/lib/sms";
+
+function formatAppointmentDate(date:Date,timeZone:string){
+  return new Intl.DateTimeFormat("fa-IR",{timeZone,dateStyle:"medium",timeStyle:"short"}).format(date);
+}
 
 const input=z.object({
   doctorId:z.string().nullable().optional(),
@@ -33,11 +38,25 @@ export async function PUT(req:Request,{params}:{params:Promise<{id:string}>}){
 
     const nextStatus=p.data.status||(p.data.doctorId? "confirmed":undefined);
     if(nextStatus==="confirmed"&&current.paymentStatus!=="paid")return fail("Paid appointment is required before confirmation",409);
+    const wasNotConfirmed=current.status!=="confirmed";
     const item=await AppointmentModel.findByIdAndUpdate(id,{$set:{
       ...(p.data.doctorId!==undefined?{doctorId:p.data.doctorId}:{}),
       ...(nextStatus?{status:nextStatus}:{}),
       ...(p.data.adminNote!==undefined?{adminNote:p.data.adminNote}:{}),
+      ...(nextStatus==="confirmed"&&wasNotConfirmed?{confirmedSmsSentAt:null}:{}),
     }},{new:true,runValidators:true}).populate("serviceId","title bookingFee currency").populate("doctorId","name").lean();
+
+    if(item&&nextStatus==="confirmed"&&wasNotConfirmed&&item.patientSnapshot?.phone){
+      try{
+        const doctorName=item.doctorId?.name?.fa||item.doctorId?.name?.en||"";
+        const serviceName=item.serviceId?.title?.fa||item.serviceId?.title?.en||"نوبت شما";
+        const doctorPart=doctorName?" پزشک: "+doctorName+"":";
+        await sendSms(item.patientSnapshot.phone,"نوبت شما تأیید شد. "+serviceName+doctorPart+" زمان: "+formatAppointmentDate(new Date(item.startsAt),item.timezone||process.env.CLINIC_TIMEZONE||"Asia/Tehran"));
+        await AppointmentModel.updateOne({_id:item._id,confirmedSmsSentAt:null},{$set:{confirmedSmsSentAt:new Date()}});
+      }catch{
+        // SMS failure must not roll back the appointment confirmation.
+      }
+    }
 
     return item?ok(item):fail("Appointment not found",404);
   }catch(e){return fail(e instanceof Error?e.message:"Unable to update appointment",500);}
