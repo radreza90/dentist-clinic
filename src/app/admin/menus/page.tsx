@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 type MenuItem={_id?:string;label:{fa:string;en:string};href:string;type:"internal"|"external";targetBlank:boolean;parentId:string|null;position:number;enabled:boolean};
 type Menu={key:string;name:{fa:string;en:string};location:"header"|"footer";items:MenuItem[]};
 
-const emptyItem=():MenuItem=>({label:{fa:"",en:""},href:"",type:"internal",targetBlank:false,parentId:null,position:0,enabled:true});
+function newId(){return Math.random().toString(16).slice(2).padStart(24,"0").slice(0,24);}
+const emptyItem=():MenuItem=>({_id:newId(),label:{fa:"",en:""},href:"",type:"internal",targetBlank:false,parentId:null,position:0,enabled:true});
 const emptyMenu=(location:"header"|"footer"):Menu=>({key:location,name:{fa:location==="header"?"منوی اصلی":"منوی فوتر",en:location==="header"?"Main menu":"Footer menu"},location,items:[]});
 
 export default function MenusAdmin(){
