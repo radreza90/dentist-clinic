@@ -3,7 +3,6 @@ import { IntegrationModel } from "@/models";
 import { getAuth,can } from "@/lib/rbac";
 import { fail,ok } from "@/lib/api";
 import { decryptIntegrationConfig } from "@/lib/integrations/crypto";
-import { getIntegrationDefinition } from "@/lib/integrations/registry";
 import { sendSmsViaProvider } from "@/lib/sms";
 import { normalizeIranianMobile } from "@/lib/phone";
 
@@ -29,9 +28,6 @@ export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){
     if(item.type!=="sms")return fail("این ماژول از نوع پیامک نیست",422);
     if(item.provider!=="ippanel")return fail("ارسال تستی فعلاً برای IPPanel فعال است",422);
     if(!item.enabled)return fail("ابتدا ماژول IPPanel را فعال کنید",422);
-
-    const definition=getIntegrationDefinition(item.type,item.provider);
-    if(!definition)return fail("Integration module is not supported",422);
 
     const config=decryptIntegrationConfig(item.configEncrypted);
     const result=await sendSmsViaProvider(item.provider,config,recipient,message);
