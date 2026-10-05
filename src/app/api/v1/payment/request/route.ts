@@ -3,6 +3,7 @@ import { AppointmentModel, PaymentModel } from "@/models";
 import { getAuth } from "@/lib/rbac";
 import { fail,ok } from "@/lib/api";
 import { paymentGateway } from "@/lib/payment";
+import { getIntegration } from "@/lib/integrations/service";
 
 export async function POST(req:Request){
   const auth=await getAuth(req);if(!auth)return fail("Authentication required",401);
@@ -24,11 +25,14 @@ export async function POST(req:Request){
       .lean();
     if(!appointment||appointment.status!=="pending_payment")return fail("Appointment is not payable",409);
 
+    const active=await getIntegration("payment");
+    if(!active)return fail("No active payment gateway is configured in the admin panel",503);
+
     const baseUrl=process.env.NEXT_PUBLIC_APP_URL||new URL(req.url).origin;
     const callbackUrl=new URL("/api/v1/payment/callback",baseUrl);
     callbackUrl.searchParams.set("paymentId",String(payment._id));
 
-    const result=await (await paymentGateway()).request({
+    const result=await (await paymentGateway(active.item.provider)).request({
       paymentId:String(payment._id),
       amount:payment.amount,
       currency:payment.currency,
@@ -38,8 +42,8 @@ export async function POST(req:Request){
     });
 
     await PaymentModel.updateOne(
-      {_id:payment._id},
-      {$set:{authority:result.authority,gateway:process.env.PAYMENT_DRIVER||"unconfigured"}}
+      {_id:payment._id,status:"pending"},
+      {$set:{authority:result.authority,gateway:active.item.provider}}
     );
 
     return ok({redirectUrl:result.redirectUrl,authority:result.authority});
