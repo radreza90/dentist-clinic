@@ -5,7 +5,6 @@ import { ok, fail } from "@/lib/api";
 import { z } from "zod";
 import { createContentRevision } from "@/lib/revisions";
 import { seoInput } from "@/lib/validators";
-import { createContentRevision } from "@/lib/revisions";
 const localized=z.object({fa:z.string().max(5000).optional(),en:z.string().max(5000).optional()});
 const input=z.object({
   slug:z.string().trim().min(1).max(160),title:localized,excerpt:localized.optional(),
