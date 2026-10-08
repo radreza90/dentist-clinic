@@ -14,6 +14,7 @@ const navigation = [
   { label: "دسته‌بندی مقالات", href: "/admin/content/blog/categories", icon: "◈" },
   { label: "نمونه‌کارها", href: "/admin/content/portfolio", icon: "✧" },
   { label: "دسته‌بندی نمونه‌کارها", href: "/admin/content/portfolio/categories", icon: "◇" },
+  { label: "مجوزها و تقدیرنامه‌ها", href: "/admin/credentials", icon: "▣" },
   { label: "رسانه", href: "/admin/media", icon: "▧" },
   { label: "منوها", href: "/admin/menus", icon: "☰" },
   { label: "Redirectها", href: "/admin/redirects", icon: "↗" },

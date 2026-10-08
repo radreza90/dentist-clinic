@@ -21,4 +21,30 @@ ContentRevision.index({contentType:1,contentId:1,version:1},{unique:true});
 
 const PortfolioItem=new Schema({slug:{type:String,unique:true,index:true},title:localizedStringSchema,description:localizedTextSchema,treatment:localizedTextSchema,categoryIds:[{type:Schema.Types.ObjectId,ref:"PortfolioCategory"}],beforeMediaIds:[{type:Schema.Types.ObjectId,ref:"Media"}],afterMediaIds:[{type:Schema.Types.ObjectId,ref:"Media"}],doctorId:{type:Schema.Types.ObjectId,ref:"Doctor"},privacy:{type:PortfolioPrivacy,default:()=>({})},status:contentStatus,seo:seoSchema,...scheduleFields,...auditFields},{timestamps:true});
 
-export const DoctorModel=models.Doctor||model("Doctor",Doctor); export const ServiceModel=models.Service||model("Service",Service); export const PageModel=models.Page||model("Page",Page); export const BlogCategoryModel=models.BlogCategory||model("BlogCategory",BlogCategory); export const BlogPostModel=models.BlogPost||model("BlogPost",BlogPost); export const PortfolioCategoryModel=models.PortfolioCategory||model("PortfolioCategory",PortfolioCategory); export const PortfolioItemModel=models.PortfolioItem||model("PortfolioItem",PortfolioItem); export const ContentRevisionModel=models.ContentRevision||model("ContentRevision",ContentRevision);
+const CredentialGroup=new Schema({
+  name:{type:localizedStringSchema,required:true},
+  description:localizedTextSchema,
+  position:{type:Number,default:0,index:true},
+  enabled:{type:Boolean,default:true,index:true},
+  ...auditFields
+},{timestamps:true});
+
+const CredentialItem=new Schema({
+  type:{type:String,enum:["license","certificate","award"],required:true,index:true},
+  title:{type:localizedStringSchema,required:true},
+  description:localizedTextSchema,
+  groupId:{type:Schema.Types.ObjectId,ref:"CredentialGroup",required:true,index:true},
+  issuer:{type:localizedStringSchema,default:()=>({fa:"",en:""})},
+  credentialNumber:{type:String,default:""},
+  issuedAt:Date,
+  expiresAt:Date,
+  mediaId:{type:Schema.Types.ObjectId,ref:"Media",required:true},
+  position:{type:Number,default:0},
+  isPublished:{type:Boolean,default:true,index:true},
+  ...auditFields
+},{timestamps:true});
+
+CredentialItem.index({groupId:1,position:1,createdAt:-1});
+CredentialItem.index({type:1,isPublished:1,position:1});
+
+export const DoctorModel=models.Doctor||model("Doctor",Doctor); export const ServiceModel=models.Service||model("Service",Service); export const PageModel=models.Page||model("Page",Page); export const BlogCategoryModel=models.BlogCategory||model("BlogCategory",BlogCategory); export const BlogPostModel=models.BlogPost||model("BlogPost",BlogPost); export const PortfolioCategoryModel=models.PortfolioCategory||model("PortfolioCategory",PortfolioCategory); export const PortfolioItemModel=models.PortfolioItem||model("PortfolioItem",PortfolioItem); export const ContentRevisionModel=models.ContentRevision||model("ContentRevision",ContentRevision); export const CredentialGroupModel=models.CredentialGroup||model("CredentialGroup",CredentialGroup); export const CredentialItemModel=models.CredentialItem||model("CredentialItem",CredentialItem);
