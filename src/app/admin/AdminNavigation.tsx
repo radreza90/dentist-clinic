@@ -15,6 +15,7 @@ const navigation = [
   { label: "نمونه‌کارها", href: "/admin/content/portfolio", icon: "✧" },
   { label: "دسته‌بندی نمونه‌کارها", href: "/admin/content/portfolio/categories", icon: "◇" },
   { label: "مجوزها و تقدیرنامه‌ها", href: "/admin/credentials", icon: "▣" },
+  { label: "گالری تصاویر", href: "/admin/gallery", icon: "▧" },
   { label: "رسانه", href: "/admin/media", icon: "▧" },
   { label: "منوها", href: "/admin/menus", icon: "☰" },
   { label: "Redirectها", href: "/admin/redirects", icon: "↗" },
@@ -25,22 +26,15 @@ const navigation = [
 export function AdminNavigation() {
   const pathname = usePathname() ?? "";
   const activeHref = navigation
-    .filter((item) => item.href === "/admin" ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .filter((item) => item.href === "/admin" ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/"))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
     <nav className="admin-nav">
       {navigation.map((item) => {
         const isActive = item.href === activeHref;
-
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={isActive ? "admin-nav-item active" : "admin-nav-item"}
-            title={item.label}
-            aria-current={isActive ? "page" : undefined}
-          >
+          <Link key={item.href} href={item.href} className={isActive ? "admin-nav-item active" : "admin-nav-item"} title={item.label} aria-current={isActive ? "page" : undefined}>
             <span className="admin-nav-icon">{item.icon}</span>
             <span>{item.label}</span>
             {isActive ? <span className="admin-nav-dot" /> : null}

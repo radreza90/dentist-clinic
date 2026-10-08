@@ -8,15 +8,7 @@ const BlogCategory=new Schema({slug:{type:String,unique:true,index:true},name:lo
 const BlogPost=new Schema({slug:{type:String,unique:true,index:true},title:localizedStringSchema,excerpt:localizedTextSchema,content:localizedTextSchema,categoryIds:[{type:Schema.Types.ObjectId,ref:"BlogCategory"}],authorId:{type:Schema.Types.ObjectId,ref:"User"},coverMediaId:{type:Schema.Types.ObjectId,ref:"Media"},status:contentStatus,publishedAt:Date,scheduledAt:Date,seo:seoSchema,...auditFields},{timestamps:true});
 const PortfolioCategory=new Schema({slug:{type:String,unique:true,index:true},name:localizedStringSchema,description:localizedTextSchema,seo:seoSchema,...auditFields},{timestamps:true});
 const PortfolioPrivacy=new Schema({consentStatus:{type:String,enum:["unknown","granted","revoked"],default:"unknown"},hideIdentity:{type:Boolean,default:true}},{_id:false});
-const ContentRevision=new Schema({
-  contentType:{type:String,enum:["page","service","doctor","blog","portfolio"],required:true,index:true},
-  contentId:{type:Schema.Types.ObjectId,required:true,index:true},
-  version:{type:Number,required:true},
-  action:{type:String,enum:["update","restore"],default:"update"},
-  snapshot:{type:Schema.Types.Mixed,required:true},
-  changedBy:{type:Schema.Types.ObjectId,ref:"User",default:null},
-  note:String
-},{timestamps:true});
+const ContentRevision=new Schema({contentType:{type:String,enum:["page","service","doctor","blog","portfolio"],required:true,index:true},contentId:{type:Schema.Types.ObjectId,required:true,index:true},version:{type:Number,required:true},action:{type:String,enum:["update","restore"],default:"update"},snapshot:{type:Schema.Types.Mixed,required:true},changedBy:{type:Schema.Types.ObjectId,ref:"User",default:null},note:String},{timestamps:true});
 ContentRevision.index({contentType:1,contentId:1,version:1},{unique:true});
 
 const PortfolioItem=new Schema({slug:{type:String,unique:true,index:true},title:localizedStringSchema,description:localizedTextSchema,treatment:localizedTextSchema,categoryIds:[{type:Schema.Types.ObjectId,ref:"PortfolioCategory"}],beforeMediaIds:[{type:Schema.Types.ObjectId,ref:"Media"}],afterMediaIds:[{type:Schema.Types.ObjectId,ref:"Media"}],doctorId:{type:Schema.Types.ObjectId,ref:"Doctor"},privacy:{type:PortfolioPrivacy,default:()=>({})},status:contentStatus,seo:seoSchema,...scheduleFields,...auditFields},{timestamps:true});
@@ -28,7 +20,6 @@ const CredentialGroup=new Schema({
   enabled:{type:Boolean,default:true,index:true},
   ...auditFields
 },{timestamps:true});
-
 const CredentialItem=new Schema({
   type:{type:String,enum:["license","certificate","award"],required:true,index:true},
   title:{type:localizedStringSchema,required:true},
@@ -43,8 +34,27 @@ const CredentialItem=new Schema({
   isPublished:{type:Boolean,default:true,index:true},
   ...auditFields
 },{timestamps:true});
-
 CredentialItem.index({groupId:1,position:1,createdAt:-1});
 CredentialItem.index({type:1,isPublished:1,position:1});
 
-export const DoctorModel=models.Doctor||model("Doctor",Doctor); export const ServiceModel=models.Service||model("Service",Service); export const PageModel=models.Page||model("Page",Page); export const BlogCategoryModel=models.BlogCategory||model("BlogCategory",BlogCategory); export const BlogPostModel=models.BlogPost||model("BlogPost",BlogPost); export const PortfolioCategoryModel=models.PortfolioCategory||model("PortfolioCategory",PortfolioCategory); export const PortfolioItemModel=models.PortfolioItem||model("PortfolioItem",PortfolioItem); export const ContentRevisionModel=models.ContentRevision||model("ContentRevision",ContentRevision); export const CredentialGroupModel=models.CredentialGroup||model("CredentialGroup",CredentialGroup); export const CredentialItemModel=models.CredentialItem||model("CredentialItem",CredentialItem);
+const GalleryGroup=new Schema({
+  name:{type:localizedStringSchema,required:true},
+  description:localizedTextSchema,
+  position:{type:Number,default:0,index:true},
+  enabled:{type:Boolean,default:true,index:true},
+  ...auditFields
+},{timestamps:true});
+const GalleryItem=new Schema({
+  title:{type:localizedStringSchema,default:()=>({fa:"",en:""})},
+  caption:localizedTextSchema,
+  groupId:{type:Schema.Types.ObjectId,ref:"GalleryGroup",required:true,index:true},
+  mediaId:{type:Schema.Types.ObjectId,ref:"Media",required:true},
+  mediaType:{type:String,enum:["image","video"],required:true,index:true},
+  position:{type:Number,default:0},
+  isPublished:{type:Boolean,default:true,index:true},
+  ...auditFields
+},{timestamps:true});
+GalleryItem.index({groupId:1,position:1,createdAt:-1});
+GalleryItem.index({mediaType:1,isPublished:1,position:1});
+
+export const DoctorModel=models.Doctor||model("Doctor",Doctor); export const ServiceModel=models.Service||model("Service",Service); export const PageModel=models.Page||model("Page",Page); export const BlogCategoryModel=models.BlogCategory||model("BlogCategory",BlogCategory); export const BlogPostModel=models.BlogPost||model("BlogPost",BlogPost); export const PortfolioCategoryModel=models.PortfolioCategory||model("PortfolioCategory",PortfolioCategory); export const PortfolioItemModel=models.PortfolioItem||model("PortfolioItem",PortfolioItem); export const ContentRevisionModel=models.ContentRevision||model("ContentRevision",ContentRevision); export const CredentialGroupModel=models.CredentialGroup||model("CredentialGroup",CredentialGroup); export const CredentialItemModel=models.CredentialItem||model("CredentialItem",CredentialItem); export const GalleryGroupModel=models.GalleryGroup||model("GalleryGroup",GalleryGroup); export const GalleryItemModel=models.GalleryItem||model("GalleryItem",GalleryItem);
