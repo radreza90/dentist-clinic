@@ -3,9 +3,9 @@ import { connectDB } from "@/lib/db";
 import { getAuth, can } from "@/lib/rbac";
 import { ok, fail } from "@/lib/api";
 
-export async function listContent(req: Request, Model: Model<any>, permission="content:read") {
+export async function listContent(req: Request, Model: Model<any>, options: { permission?: string; categoryField?: string } = {}) {
   const auth = await getAuth(req);
-  if (!auth || !can(String(auth.role), permission)) return fail("Forbidden", 403);
+  if (!auth || !can(String(auth.role), options.permission || "content:read")) return fail("Forbidden", 403);
   try {
     await connectDB();
     const url = new URL(req.url);
@@ -13,8 +13,10 @@ export async function listContent(req: Request, Model: Model<any>, permission="c
     const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") || 20)));
     const search = url.searchParams.get("search")?.trim();
     const status = url.searchParams.get("status");
+    const categoryId = url.searchParams.get("categoryId");
     const filter: Record<string, unknown> = {};
     if (status) filter.status = status;
+    if (categoryId && options.categoryField) filter[options.categoryField] = categoryId;
     if (search) filter.$or = [
       { "title.fa": { $regex: search, $options: "i" } },
       { "title.en": { $regex: search, $options: "i" } },

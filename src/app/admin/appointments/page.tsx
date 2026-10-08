@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { PersianDatePicker } from "@/components/admin/PersianDatePicker";
+import { useAdminFeedback } from "@/components/admin/AdminFeedback";
 
 type Doctor={_id:string;name:{fa?:string;en?:string}};
 type Appointment={
@@ -13,6 +15,7 @@ type Appointment={
 function formatDate(value:string){return new Date(value).toLocaleString("fa-IR",{dateStyle:"medium",timeStyle:"short"});}
 
 export default function AppointmentsAdmin(){
+  const {toast}=useAdminFeedback();
   const [appointments,setAppointments]=useState<Appointment[]>([]);
   const [doctors,setDoctors]=useState<Doctor[]>([]);
   const [status,setStatus]=useState("");
@@ -40,6 +43,7 @@ export default function AppointmentsAdmin(){
     const r=await fetch("/api/v1/admin/appointments/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({doctorId})});
     const p=await r.json();
     if(!r.ok||!p.success){setError(p.error?.message||"تخصیص پزشک ناموفق بود");return;}
+    toast("پزشک به نوبت تخصیص داده شد.");
     await load();
   }
 
@@ -49,6 +53,7 @@ export default function AppointmentsAdmin(){
       const r=await fetch("/api/v1/admin/appointments/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({adminNote:notes[id]||""})});
       const p=await r.json();
       if(!r.ok||!p.success)throw new Error(p.error?.message||"ذخیره یادداشت ناموفق بود");
+      toast("یادداشت نوبت ذخیره شد.");
       await load();
     }catch(e){setError(e instanceof Error?e.message:"ذخیره یادداشت ناموفق بود");}
     finally{setSavingNote(null);}
@@ -57,17 +62,17 @@ export default function AppointmentsAdmin(){
   async function updateStatus(id:string,nextStatus:string){
     const r=await fetch("/api/v1/admin/appointments/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:nextStatus})});
     const p=await r.json();
-    if(!r.ok||!p.success)setError(p.error?.message||"تغییر وضعیت ناموفق بود");else await load();
+    if(!r.ok||!p.success)setError(p.error?.message||"تغییر وضعیت ناموفق بود");else{toast("وضعیت نوبت به‌روزرسانی شد.");await load();}
   }
 
   return <main>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,flexWrap:"wrap"}}>
       <div><h1>مدیریت نوبت‌ها</h1><p style={{color:"#666"}}>رزروها، پرداخت و تخصیص پزشک از این بخش مدیریت می‌شود.</p></div>
-      <button type="button" onClick={()=>void load()}>بازخوانی</button>
+      <button className="admin-action-neutral" type="button" onClick={()=>void load()}>بازخوانی</button>
     </div>
 
     <div style={{display:"flex",gap:10,margin:"24px 0",flexWrap:"wrap"}}>
-      <input type="date" value={date} onChange={e=>setDate(e.target.value)}/>
+      <PersianDatePicker mode="date" label="فیلتر بر اساس تاریخ شمسی" value={date} onChange={setDate}/>
       <select value={status} onChange={e=>setStatus(e.target.value)}>
         <option value="">همه وضعیت‌ها</option>
         <option value="pending_payment">در انتظار پرداخت</option>

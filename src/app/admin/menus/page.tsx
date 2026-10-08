@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAdminFeedback } from "@/components/admin/AdminFeedback";
 
 type MenuItem={_id?:string;label:{fa:string;en:string};href:string;type:"internal"|"external";targetBlank:boolean;parentId:string|null;position:number;enabled:boolean};
 type Menu={key:string;name:{fa:string;en:string};location:"header"|"footer";items:MenuItem[]};
@@ -10,17 +11,17 @@ const emptyItem=():MenuItem=>({_id:newId(),label:{fa:"",en:""},href:"",type:"int
 const emptyMenu=(location:"header"|"footer"):Menu=>({key:location,name:{fa:location==="header"?"منوی اصلی":"منوی فوتر",en:location==="header"?"Main menu":"Footer menu"},location,items:[]});
 
 export default function MenusAdmin(){
+  const {toast}=useAdminFeedback();
   const [location,setLocation]=useState<"header"|"footer">("header");
   const [form,setForm]=useState<Menu>(()=>emptyMenu("header"));
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
-  const [message,setMessage]=useState("");
   const [draft,setDraft]=useState<MenuItem>(emptyItem());
   const [editing,setEditing]=useState<number|null>(null);
 
   async function load(nextLocation=location){
-    setLoading(true);setError("");setMessage("");
+    setLoading(true);setError("");
     try{
       const r=await fetch("/api/v1/admin/menus?location="+nextLocation,{cache:"no-store"});
       const p=await r.json();
@@ -53,12 +54,12 @@ export default function MenusAdmin(){
   }
 
   async function save(){
-    setSaving(true);setError("");setMessage("");
+    setSaving(true);setError("");
     try{
       const r=await fetch("/api/v1/admin/menus",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
       const p=await r.json();
       if(!r.ok||!p.success)throw new Error(p.error?.message||"ذخیره منو ناموفق بود");
-      setMessage("منو ذخیره شد.");await load();
+      toast("منو ذخیره شد.");await load();
     }catch(e){setError(e instanceof Error?e.message:"ذخیره ناموفق بود");}
     finally{setSaving(false);}
   }
@@ -71,7 +72,7 @@ export default function MenusAdmin(){
       <div style={{display:"flex",gap:8}}><button type="button" onClick={()=>setLocation("header")}>سربرگ</button><button type="button" onClick={()=>setLocation("footer")}>فوتر</button></div>
     </div>
 
-    {message&&<p style={{color:"#027a48"}}>{message}</p>}{error&&<p style={{color:"#b42318"}}>{error}</p>}
+    {error&&<p style={{color:"#b42318"}}>{error}</p>}
 
     <section style={{marginTop:20,padding:20,background:"#fff",border:"1px solid #e4e7ec",borderRadius:16,display:"grid",gap:14}}>
       <h2 style={{margin:0}}>مشخصات منو</h2>
@@ -97,8 +98,8 @@ export default function MenusAdmin(){
         <label><input type="checkbox" checked={draft.enabled} onChange={e=>setDraft({...draft,enabled:e.target.checked})}/> فعال</label>
       </div>
       <div style={{display:"flex",gap:8}}>
-        <button type="button" onClick={addOrUpdateItem}>{editing===null?"افزودن آیتم":"ذخیره آیتم"}</button>
-        {editing!==null&&<button type="button" onClick={()=>{setDraft(emptyItem());setEditing(null);}}>انصراف</button>}
+        <button className={editing===null?"admin-action-create":"admin-action-success"} type="button" onClick={addOrUpdateItem}>{editing===null?"افزودن آیتم":"ذخیره آیتم"}</button>
+        {editing!==null&&<button className="admin-action-neutral" type="button" onClick={()=>{setDraft(emptyItem());setEditing(null);}}>انصراف</button>}
       </div>
     </section>
 
@@ -109,10 +110,10 @@ export default function MenusAdmin(){
         <div><strong>{item.label.fa||item.label.en}</strong><div dir="ltr" style={{color:"#667085",fontSize:12}}>{item.href}</div>{item.parentId&&<small>زیرمجموعه</small>}</div>
         <span>{item.enabled?"فعال":"غیرفعال"}</span>
         <div style={{display:"flex",gap:6}}><button type="button" onClick={()=>move(index,-1)}>↑</button><button type="button" onClick={()=>move(index,1)}>↓</button></div>
-        <div style={{display:"flex",gap:6}}><button type="button" onClick={()=>editItem(index)}>ویرایش</button><button type="button" onClick={()=>removeItem(index)}>حذف</button></div>
+        <div style={{display:"flex",gap:6}}><button className="admin-action-neutral" type="button" onClick={()=>editItem(index)}>ویرایش</button><button className="admin-action-danger" type="button" onClick={()=>removeItem(index)}>حذف</button></div>
       </div>)}</div>}
     </section>
 
-    <button type="button" onClick={()=>void save()} disabled={saving} style={{marginTop:16}}>{saving?"در حال ذخیره…":"ذخیره منو"}</button>
+    <button className="admin-action-success" type="button" onClick={()=>void save()} disabled={saving} style={{marginTop:16}}>{saving?"در حال ذخیره…":"ذخیره منو"}</button>
   </main>;
 }

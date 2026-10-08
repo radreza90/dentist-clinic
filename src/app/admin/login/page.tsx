@@ -35,12 +35,12 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main dir="rtl" style={{minHeight:"100vh",display:"grid",placeItems:"center",padding:24,background:"#f7f8fa",fontFamily:"var(--font-vazirmatn),sans-serif"}}>
-      <form onSubmit={submit} style={{width:"100%",maxWidth:420,padding:28,border:"1px solid #ddd",borderRadius:16,background:"#fff"}}>
+    <main dir="rtl" className="admin-login-page">
+      <form onSubmit={submit} className="admin-login-card">
         <h1 style={{marginTop:0}}>ورود به پنل مدیریت</h1>
-        <label style={{display:"grid",gap:8,marginBottom:16}}>ایمیل<input value={email} onChange={e=>setEmail(e.target.value)} type="email" autoComplete="username" required style={{padding:12}} /></label>
-        <label style={{display:"grid",gap:8,marginBottom:16}}>رمز عبور<input value={password} onChange={e=>setPassword(e.target.value)} type="password" autoComplete="current-password" minLength={8} required style={{padding:12}} /></label>
-        {error && <p style={{color:"#b42318"}}>{error}</p>}
+        <label className="admin-login-field">ایمیل<input value={email} onChange={e=>setEmail(e.target.value)} type="email" autoComplete="username" required /></label>
+        <label className="admin-login-field">رمز عبور<input value={password} onChange={e=>setPassword(e.target.value)} type="password" autoComplete="current-password" minLength={8} required /></label>
+        {error && <p className="admin-login-error" role="alert">{error}</p>}
         <button disabled={loading} type="submit" style={{width:"100%",padding:12}}>{loading?"در حال ورود…":"ورود"}</button>
       </form>
     </main>

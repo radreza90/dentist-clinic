@@ -2,7 +2,9 @@ import Link from "next/link";
 import localFont from "next/font/local";
 import { headers } from "next/headers";
 import { AdminNavigation } from "./AdminNavigation";
+import { AdminProfileMenu } from "./AdminProfileMenu";
 import { LogoutButton } from "./LogoutButton";
+import { AdminFeedbackProvider } from "@/components/admin/AdminFeedback";
 
 const vazirmatn = localFont({
   src: "../fonts/vazirmatn/Vazirmatn[wght].woff2",
@@ -14,7 +16,7 @@ const vazirmatn = localFont({
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const requestHeaders = await headers();
   if (requestHeaders.get("x-pathname") === "/admin/login") {
-    return <div className={vazirmatn.variable}>{children}</div>;
+    return <div className={`${vazirmatn.variable} admin-login-shell`}>{children}</div>;
   }
 
   return (
@@ -45,22 +47,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
 
       <div className="admin-main">
-        <header className="admin-topbar">
-          <div className="admin-topbar-search">
-            <span>⌕</span>
-            <input aria-label="جستجوی سریع" placeholder="جستجوی سریع..." />
-            <kbd>⌘ K</kbd>
-          </div>
-          <div className="admin-topbar-actions">
-            <button className="admin-icon-button" type="button" aria-label="اعلان‌ها">♧</button>
-            <span className="admin-topbar-divider" />
-            <div className="admin-user">
-              <span className="admin-avatar">م</span>
-              <span><strong>مدیر سیستم</strong><small>دسترسی کامل</small></span>
+        <AdminFeedbackProvider>
+          <header className="admin-topbar">
+            <div className="admin-topbar-actions">
+              <AdminProfileMenu />
             </div>
-          </div>
-        </header>
-        <main className="admin-content">{children}</main>
+          </header>
+          <main className="admin-content">{children}</main>
+        </AdminFeedbackProvider>
       </div>
     </div>
   );

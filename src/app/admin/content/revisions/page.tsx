@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useAdminFeedback } from "@/components/admin/AdminFeedback";
 
 type Revision={_id:string;version:number;action:"update"|"restore";createdAt:string;changedBy?:{firstName?:string;lastName?:string;email?:string;phone?:string}|null;snapshot:Record<string,unknown>};
 
 export default function RevisionsPage(){
+  const {confirm,toast}=useAdminFeedback();
   const [items,setItems]=useState<Revision[]>([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
@@ -29,12 +31,13 @@ export default function RevisionsPage(){
   useEffect(()=>{void load();},[contentType,contentId]);
 
   async function restore(item:Revision){
-    if(!window.confirm("نسخه "+item.version+" بازیابی شود؟"))return;
+    if(!await confirm({title:`بازیابی نسخه ${item.version}`,description:"محتوای فعلی با این نسخه جایگزین می‌شود؛ نسخهٔ قبلی در تاریخچه باقی می‌ماند.",confirmLabel:"بازیابی نسخه",tone:"warning"}))return;
     setBusy(item._id);setError("");
     try{
       const r=await fetch("/api/v1/admin/revisions/"+item._id+"/restore",{method:"POST"});
       const p=await r.json();
       if(!r.ok||!p.success)throw new Error(p.error?.message||"بازیابی ناموفق بود");
+      toast(`نسخه ${item.version} بازیابی شد.`);
       await load();
     }catch(e){setError(e instanceof Error?e.message:"بازیابی ناموفق بود");}
     finally{setBusy(null);}
@@ -44,7 +47,7 @@ export default function RevisionsPage(){
   return <main style={{maxWidth:1000}}>
     <div style={{display:"flex",justifyContent:"space-between",gap:16,alignItems:"center",flexWrap:"wrap"}}>
       <div><h1>تاریخچه {title}</h1><p style={{color:"#667085"}}>نسخه‌های ذخیره‌شده و امکان بازگردانی بدون حذف تاریخچه.</p></div>
-      <Link href={"/admin/content/"+(contentType==="doctor"?"doctors":contentType==="service"?"services":contentType==="blog"?"blog":contentType==="portfolio"?"portfolio":"pages")}>بازگشت به محتوا</Link>
+      <Link href={"/admin/content/"+(contentType==="doctor"?"doctors":contentType==="service"?"services":contentType==="blog"?"blog":contentType==="portfolio"?"portfolio":"pages")}>بازگشت به فهرست محتوا</Link>
     </div>
     {error&&<p style={{color:"#b42318"}}>{error}</p>}
     <div style={{marginTop:20,display:"grid",gap:12}}>

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { RichEditor } from "@/components/editor/RichEditor";
 import { MediaPicker } from "@/components/editor/MediaPicker";
+import { PersianDatePicker } from "@/components/admin/PersianDatePicker";
+import { useAdminFeedback } from "@/components/admin/AdminFeedback";
 
 type Kind = "page" | "blog" | "doctor" | "portfolio";
 type Locale = "fa" | "en";
@@ -23,6 +25,10 @@ type SeoForm = {
 type Certificate = { title: Localized; issuer: Localized; year: string; mediaId: string | null };
 type Course = { title: Localized; provider: Localized; year: string };
 type Credential = { title: Localized; description: Localized };
+type DoctorRecordEditor =
+  | { type: "certificate"; index: number | null; value: Certificate }
+  | { type: "course"; index: number | null; value: Course }
+  | { type: "credential"; index: number | null; value: Credential };
 type Faq = { question: Localized; answer: Localized };
 type FormState = {
   kind: Kind;
@@ -124,14 +130,29 @@ function fromLocalDateTime(value: string) {
   return value ? new Date(value).toISOString() : null;
 }
 
-function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+function Section({ title, description, children, className, collapsible = false }: { title: string; description?: string; children: ReactNode; className?: string; collapsible?: boolean }) {
   return (
-    <section style={{ background: "#fff", border: "1px solid #e3e6ea", borderRadius: 16, padding: 20, display: "grid", gap: 16, boxShadow: "0 2px 10px rgba(15,23,42,.03)" }}>
-      <div>
-        <h2 style={{ margin: 0, fontSize: 20 }}>{title}</h2>
-        {description && <p style={{ margin: "6px 0 0", color: "#667085", fontSize: 13 }}>{description}</p>}
-      </div>
-      {children}
+    <section className={className} style={{ background: "#fff", border: "1px solid #e3e6ea", borderRadius: 16, padding: 20, display: "grid", gap: 16, boxShadow: "0 2px 10px rgba(15,23,42,.03)" }}>
+      {collapsible ? (
+        <details className="content-section-accordion">
+          <summary>
+            <div className="content-section-heading">
+              <h2 style={{ margin: 0, fontSize: 20 }}>{title}</h2>
+              {description && <p style={{ margin: "6px 0 0", color: "#667085", fontSize: 13 }}>{description}</p>}
+            </div>
+            <span className="content-section-accordion-icon" aria-hidden="true">⌄</span>
+          </summary>
+          <div className="content-section-accordion-body">{children}</div>
+        </details>
+      ) : (
+        <>
+          <div className="content-section-heading">
+            <h2 style={{ margin: 0, fontSize: 20 }}>{title}</h2>
+            {description && <p style={{ margin: "6px 0 0", color: "#667085", fontSize: 13 }}>{description}</p>}
+          </div>
+          {children}
+        </>
+      )}
     </section>
   );
 }
@@ -181,25 +202,25 @@ function Pill({ children, tone = "#f2f4f7" }: { children: ReactNode; tone?: stri
 function MediaThumb({ media, onRemove }: { media?: Media; onRemove?: () => void }) {
   if (!media) return null;
   return (
-    <div style={{ position: "relative", border: "1px solid #e1e5ea", borderRadius: 12, overflow: "hidden", background: "#f8fafc" }}>
+    <div className="content-media-preview">
       {media.mimeType.startsWith("image/") ? (
-        <img src={media.url} alt={media.alt?.fa || media.title?.fa || ""} style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", display: "block" }} />
+        <img src={media.url} alt={media.alt?.fa || media.title?.fa || ""} />
       ) : (
-        <div style={{ minHeight: 110, display: "grid", placeItems: "center", padding: 16, fontWeight: 700 }}>{media.mimeType === "application/pdf" ? "PDF" : "فایل"}</div>
+        <div className="content-media-file"><span>{media.mimeType === "application/pdf" ? "PDF" : media.mimeType.split("/").pop()?.toUpperCase() || "FILE"}</span><small>فایل پیوست‌شده</small></div>
       )}
-      {onRemove && <button type="button" onClick={onRemove} style={{ position: "absolute", top: 8, insetInlineEnd: 8, border: 0, borderRadius: 999, background: "#fff", padding: "4px 8px", cursor: "pointer" }}>×</button>}
+      {onRemove && <button type="button" onClick={onRemove} className="content-media-remove" aria-label="حذف فایل پیوست">×</button>}
     </div>
   );
 }
 
 export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title: string; endpoint: string; id?: string }) {
+  const {toast}=useAdminFeedback();
   const [form, setForm] = useState<FormState>(() => emptyForm(kind));
   const [loading, setLoading] = useState(Boolean(id));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
   const [picker, setPicker] = useState<"photo" | "cover" | "certificate" | "before" | "after" | "ogImage" | null>(null);
-  const [editingCertificate, setEditingCertificate] = useState<number | null>(null);
+  const [recordEditor, setRecordEditor] = useState<DoctorRecordEditor | null>(null);
   const [media, setMedia] = useState<Media[]>([]);
   const [services, setServices] = useState<Option[]>([]);
   const [categories, setCategories] = useState<Option[]>([]);
@@ -370,7 +391,6 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
     event.preventDefault();
     setSaving(true);
     setError("");
-    setMessage("");
     try {
       const body: Record<string, unknown> = {
         slug: form.slug,
@@ -429,7 +449,7 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
       });
       const payload = await response.json();
       if (!response.ok || !payload.success) throw new Error(payload.error?.message || "ذخیره انجام نشد");
-      setMessage("تغییرات با موفقیت ذخیره شد.");
+      toast("تغییرات با موفقیت ذخیره شد.");
       if (!id && payload.data?._id) window.history.replaceState(null, "", `/admin/content/${base}/${payload.data._id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "ذخیره ناموفق بود");
@@ -442,15 +462,40 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
     update(key, form[key].filter((idValue) => idValue !== mediaId));
   }
 
-  function insertCertificateMedia(mediaId: string) {
-    if (editingCertificate === null) return;
-    setForm((current) => ({ ...current, certificates: current.certificates.map((item, index) => index === editingCertificate ? { ...item, mediaId } : item) }));
+  function openDoctorRecord(type: DoctorRecordEditor["type"], index: number | null = null) {
+    if (type === "certificate") {
+      const value = index === null ? { title: localized(), issuer: localized(), year: "", mediaId: null } : form.certificates[index];
+      if (value) setRecordEditor({ type, index, value: { ...value, title: { ...value.title }, issuer: { ...value.issuer } } });
+    } else if (type === "course") {
+      const value = index === null ? { title: localized(), provider: localized(), year: "" } : form.courses[index];
+      if (value) setRecordEditor({ type, index, value: { ...value, title: { ...value.title }, provider: { ...value.provider } } });
+    } else {
+      const value = index === null ? { title: localized(), description: localized() } : form.credentials[index];
+      if (value) setRecordEditor({ type, index, value: { ...value, title: { ...value.title }, description: { ...value.description } } });
+    }
   }
 
-  function addCertificate() {
-    const index = form.certificates.length;
-    setForm((current) => ({ ...current, certificates: [...current.certificates, { title: localized(), issuer: localized(), year: "", mediaId: null }] }));
-    setEditingCertificate(index);
+  function saveDoctorRecord() {
+    if (!recordEditor) return;
+    setForm((current) => {
+      if (recordEditor.type === "certificate") {
+        const certificates = [...current.certificates];
+        if (recordEditor.index === null) certificates.push(recordEditor.value);
+        else certificates[recordEditor.index] = recordEditor.value;
+        return { ...current, certificates };
+      }
+      if (recordEditor.type === "course") {
+        const courses = [...current.courses];
+        if (recordEditor.index === null) courses.push(recordEditor.value);
+        else courses[recordEditor.index] = recordEditor.value;
+        return { ...current, courses };
+      }
+      const credentials = [...current.credentials];
+      if (recordEditor.index === null) credentials.push(recordEditor.value);
+      else credentials[recordEditor.index] = recordEditor.value;
+      return { ...current, credentials };
+    });
+    setRecordEditor(null);
   }
 
   if (loading) return <main><p>در حال بارگذاری…</p></main>;
@@ -460,23 +505,23 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
   const ogImage = form.seo.ogImageMediaId ? mediaById.get(form.seo.ogImageMediaId) : undefined;
 
   return (
-    <main style={{ maxWidth: 1150 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 22 }}>
-        <div>
+    <main className={kind === "doctor" ? "doctor-editor-page" : undefined} style={{ maxWidth: 1150 }}>
+      <div className={`content-editor-heading${kind === "doctor" ? " doctor-editor-heading" : ""}`}>
+        <div className="content-editor-title">
           <Pill tone={id ? "#eef6ff" : "#ecfdf3"}>{id ? "ویرایش" : "ایجاد جدید"}</Pill>
           <h1 style={{ margin: "10px 0 6px", fontSize: 28 }}>{id ? `ویرایش ${title}` : `افزودن ${title}`}</h1>
-          <p style={{ margin: 0, color: "#667085" }}>اطلاعات فارسی و انگلیسی، رسانه، محتوای تخصصی و تنظیمات SEO را از همین صفحه مدیریت کنید.</p>
+          <p style={{ margin: 0, color: "#667085" }}>{kind === "doctor" ? "پروفایل حرفه‌ای پزشک را تکمیل کنید؛ تغییرات پس از ذخیره در صفحه پزشک نمایش داده می‌شوند." : "اطلاعات فارسی و انگلیسی، رسانه، محتوای تخصصی و تنظیمات SEO را از همین صفحه مدیریت کنید."}</p>
         </div>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <div className="content-editor-actions">
           {id&&<Link href={"/admin/content/revisions?contentType="+encodeURIComponent(kind)+"&contentId="+encodeURIComponent(id)} style={{padding:"9px 13px",border:"1px solid #d0d5dd",borderRadius:10,background:"#fff"}}>تاریخچه نسخه‌ها</Link>}
           <Link href={`/admin/content/${base}`} style={{ padding: "9px 13px", border: "1px solid #d0d5dd", borderRadius: 10, background: "#fff" }}>بازگشت به فهرست</Link>
         </div>
       </div>
 
-      {optionsError && <div style={{ marginBottom: 16, padding: 12, borderRadius: 10, background: "#fff7ed", color: "#9a3412" }}>{optionsError}</div>}
+      {optionsError && <div className="content-editor-notice" style={{ marginBottom: 16, padding: 12, borderRadius: 10, background: "#fff7ed", color: "#9a3412" }}>{optionsError}</div>}
 
-      <form onSubmit={save} style={{ display: "grid", gap: 16 }}>
-        <Section title="اطلاعات پایه" description="شناسه و عنوان اصلی محتوا.">
+      <form onSubmit={save} className={kind === "doctor" ? "doctor-editor-form" : "content-editor-form"}>
+        <Section className={kind === "doctor" ? "doctor-identity-card" : undefined} title={kind === "doctor" ? "اطلاعات هویتی" : "اطلاعات پایه"} description={kind === "doctor" ? "نام پزشک، تخصص و مسیر صفحه عمومی." : "شناسه و عنوان اصلی محتوا."}>
           <FieldGrid>
             <label style={{ display: "grid", gap: 7 }}><span>Slug</span><input required value={form.slug} onChange={(e) => update("slug", e.target.value)} placeholder="example-slug" dir="ltr" /></label>
             {kind === "doctor" ? (
@@ -485,13 +530,13 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
               <label style={{ display: "grid", gap: 7 }}><span>عنوان فارسی</span><input required value={form.title.fa} onChange={(e) => updateLocalized("title", "fa", e.target.value)} /></label>
             )}
             <label style={{ display: "grid", gap: 7 }}><span>{kind === "doctor" ? "نام انگلیسی" : "عنوان انگلیسی"}</span><input value={kind === "doctor" ? form.name.en : form.title.en} onChange={(e) => updateLocalized(kind === "doctor" ? "name" : "title", "en", e.target.value)} dir="ltr" /></label>
-            {kind === "doctor" && <label style={{ display: "grid", gap: 7 }}><span>دانشگاه</span><input value={form.university.fa} onChange={(e) => updateLocalized("university", "fa", e.target.value)} /><input value={form.university.en} onChange={(e) => updateLocalized("university", "en", e.target.value)} placeholder="University" dir="ltr" /></label>}
+            {kind === "doctor" && <div className="doctor-university-fields"><label><span>دانشگاه / مرکز آموزشی</span><input value={form.university.fa} onChange={(e) => updateLocalized("university", "fa", e.target.value)} placeholder="نام دانشگاه به فارسی" /></label><label><span>University / Institute</span><input value={form.university.en} onChange={(e) => updateLocalized("university", "en", e.target.value)} placeholder="University name" dir="ltr" /></label></div>}
           </FieldGrid>
         </Section>
 
         {kind === "doctor" && (
           <>
-            <Section title="هویت حرفه‌ای پزشک" description="معرفی، رزومه و خدماتی که پزشک ارائه می‌کند.">
+            <Section className="doctor-professional-card" title="معرفی و تخصص" description="معرفی کوتاه، بیوگرافی و حوزه‌های درمانی پزشک.">
               <FieldGrid>
                 <LocalizedField label="معرفی کوتاه" value={form.shortBio} onChange={(value) => update("shortBio", value)} multiline />
                 <LocalizedField label="رزومه / CV" value={form.cv} onChange={(value) => update("cv", value)} multiline />
@@ -499,10 +544,10 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
               <LocalizedField label="بیوگرافی کامل" value={form.bio} onChange={(value) => update("bio", value)} rich />
               {services.length > 0 && (
                 <div style={{ display: "grid", gap: 10 }}>
-                  <strong>خدمات</strong>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 10 }}>
+                  <div className="doctor-services-heading"><strong>خدمات قابل ارائه</strong><span>{form.services.length} خدمت انتخاب شده</span></div>
+                  <div className="doctor-services-grid">
                     {services.map((service) => (
-                      <label key={service._id} style={{ border: "1px solid #e4e7ec", borderRadius: 10, padding: 10, display: "flex", gap: 9, alignItems: "center", cursor: "pointer" }}>
+                      <label className={form.services.includes(service._id) ? "is-selected" : ""} key={service._id}>
                         <input type="checkbox" checked={form.services.includes(service._id)} onChange={() => setForm((current) => ({ ...current, services: current.services.includes(service._id) ? current.services.filter((idValue) => idValue !== service._id) : [...current.services, service._id] }))} />
                         <span>{service.label}</span>
                       </label>
@@ -510,62 +555,68 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
                   </div>
                 </div>
               )}
+              {services.length === 0 && <p className="doctor-services-empty">هنوز خدمتی ثبت نشده است؛ بعداً می‌توانید خدمات را به پزشک متصل کنید.</p>}
             </Section>
 
-            <Section title="مدارک و دوره‌ها" description="گواهی‌ها، دوره‌های آموزشی و مجوزهای قابل نمایش در صفحه پزشک.">
-              <div style={{ display: "grid", gap: 12 }}>
+            <Section className="doctor-credentials-card" title="سوابق و مدارک" description="گواهی‌ها، دوره‌های آموزشی و صلاحیت‌های حرفه‌ای.">
+              <div className="doctor-credential-list">
+                <div className="doctor-subsection-heading"><span>✳</span><div><strong>گواهی‌ها</strong><small>مدارک و گواهی‌های رسمی</small></div></div>
                 {form.certificates.map((item, index) => (
-                  <div key={index} style={{ border: "1px solid #e4e7ec", borderRadius: 14, padding: 14, display: "grid", gap: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-                      <strong>گواهی شماره {index + 1}</strong>
-                      <button type="button" onClick={() => setForm((current) => ({ ...current, certificates: current.certificates.filter((_, itemIndex) => itemIndex !== index) }))}>حذف</button>
+                  <article className="doctor-record-entry" key={index}>
+                    <div className="doctor-record-copy">
+                      <strong>{item.title.fa || item.title.en || `گواهی شماره ${index + 1}`}</strong>
+                      <span>{[item.issuer.fa || item.issuer.en, item.year].filter(Boolean).join(" • ") || "صادرکننده یا سال ثبت نشده"}</span>
+                      {item.mediaId && <small>فایل مدرک پیوست شده</small>}
                     </div>
-                    <FieldGrid>
-                      <LocalizedField label="عنوان" value={item.title} onChange={(value) => setForm((current) => ({ ...current, certificates: current.certificates.map((row, rowIndex) => rowIndex === index ? { ...row, title: value } : row) }))} />
-                      <LocalizedField label="صادرکننده" value={item.issuer} onChange={(value) => setForm((current) => ({ ...current, certificates: current.certificates.map((row, rowIndex) => rowIndex === index ? { ...row, issuer: value } : row) }))} />
-                    </FieldGrid>
-                    <label style={{ display: "grid", gap: 7, maxWidth: 180 }}><span>سال</span><input inputMode="numeric" value={item.year} onChange={(e) => setForm((current) => ({ ...current, certificates: current.certificates.map((row, rowIndex) => rowIndex === index ? { ...row, year: e.target.value.replace(/\\D/g, "").slice(0, 4) } : row) }))} /></label>
-                    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                      <button type="button" onClick={() => { setEditingCertificate(index); setPicker("certificate"); }}>انتخاب فایل / تصویر مدرک</button>
-                      {item.mediaId && <Pill>مدرک پیوست شده</Pill>}
+                    <div className="doctor-record-actions">
+                      <button type="button" onClick={() => openDoctorRecord("certificate", index)}>ویرایش</button>
+                      <button className="admin-action-danger" type="button" aria-label={`حذف گواهی ${index + 1}`} onClick={() => setForm((current) => ({ ...current, certificates: current.certificates.filter((_, itemIndex) => itemIndex !== index) }))}>حذف</button>
                     </div>
-                  </div>
+                  </article>
                 ))}
-                <button type="button" onClick={addCertificate}>افزودن گواهی</button>
+                <button className="admin-action-create" type="button" onClick={() => openDoctorRecord("certificate")}>افزودن گواهی</button>
               </div>
 
-              <div style={{ display: "grid", gap: 12 }}>
+              <div className="doctor-credential-list">
+                <div className="doctor-subsection-heading"><span>◷</span><div><strong>دوره‌های آموزشی</strong><small>دوره‌های تخصصی و تکمیلی</small></div></div>
                 {form.courses.map((item, index) => (
-                  <div key={index} style={{ border: "1px solid #e4e7ec", borderRadius: 14, padding: 14, display: "grid", gap: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><strong>دوره آموزشی {index + 1}</strong><button type="button" onClick={() => setForm((current) => ({ ...current, courses: current.courses.filter((_, itemIndex) => itemIndex !== index) }))}>حذف</button></div>
-                    <FieldGrid>
-                      <LocalizedField label="عنوان دوره" value={item.title} onChange={(value) => setForm((current) => ({ ...current, courses: current.courses.map((row, rowIndex) => rowIndex === index ? { ...row, title: value } : row) }))} />
-                      <LocalizedField label="برگزارکننده" value={item.provider} onChange={(value) => setForm((current) => ({ ...current, courses: current.courses.map((row, rowIndex) => rowIndex === index ? { ...row, provider: value } : row) }))} />
-                    </FieldGrid>
-                    <input value={item.year} onChange={(e) => setForm((current) => ({ ...current, courses: current.courses.map((row, rowIndex) => rowIndex === index ? { ...row, year: e.target.value.replace(/\\D/g, "").slice(0, 4) } : row) }))} placeholder="سال" inputMode="numeric" />
-                  </div>
+                  <article className="doctor-record-entry" key={index}>
+                    <div className="doctor-record-copy">
+                      <strong>{item.title.fa || item.title.en || `دوره آموزشی ${index + 1}`}</strong>
+                      <span>{[item.provider.fa || item.provider.en, item.year].filter(Boolean).join(" • ") || "برگزارکننده یا سال ثبت نشده"}</span>
+                    </div>
+                    <div className="doctor-record-actions">
+                      <button type="button" onClick={() => openDoctorRecord("course", index)}>ویرایش</button>
+                      <button className="admin-action-danger" type="button" aria-label={`حذف دوره ${index + 1}`} onClick={() => setForm((current) => ({ ...current, courses: current.courses.filter((_, itemIndex) => itemIndex !== index) }))}>حذف</button>
+                    </div>
+                  </article>
                 ))}
-                <button type="button" onClick={() => setForm((current) => ({ ...current, courses: [...current.courses, { title: localized(), provider: localized(), year: "" }] }))}>افزودن دوره</button>
+                <button className="admin-action-create" type="button" onClick={() => openDoctorRecord("course")}>افزودن دوره</button>
               </div>
 
-              <div style={{ display: "grid", gap: 12 }}>
+              <div className="doctor-credential-list">
+                <div className="doctor-subsection-heading"><span>◇</span><div><strong>صلاحیت‌ها</strong><small>مجوزها و توانمندی‌های حرفه‌ای</small></div></div>
                 {form.credentials.map((item, index) => (
-                  <div key={index} style={{ border: "1px solid #e4e7ec", borderRadius: 14, padding: 14, display: "grid", gap: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><strong>مجوز / صلاحیت {index + 1}</strong><button type="button" onClick={() => setForm((current) => ({ ...current, credentials: current.credentials.filter((_, itemIndex) => itemIndex !== index) }))}>حذف</button></div>
-                    <LocalizedField label="عنوان" value={item.title} onChange={(value) => setForm((current) => ({ ...current, credentials: current.credentials.map((row, rowIndex) => rowIndex === index ? { ...row, title: value } : row) }))} />
-                    <LocalizedField label="توضیحات" value={item.description} onChange={(value) => setForm((current) => ({ ...current, credentials: current.credentials.map((row, rowIndex) => rowIndex === index ? { ...row, description: value } : row) }))} multiline />
-                  </div>
+                  <article className="doctor-record-entry" key={index}>
+                    <div className="doctor-record-copy">
+                      <strong>{item.title.fa || item.title.en || `مجوز / صلاحیت ${index + 1}`}</strong>
+                      <span>{item.description.fa || item.description.en || "توضیحات ثبت نشده"}</span>
+                    </div>
+                    <div className="doctor-record-actions">
+                      <button type="button" onClick={() => openDoctorRecord("credential", index)}>ویرایش</button>
+                      <button className="admin-action-danger" type="button" aria-label={`حذف صلاحیت ${index + 1}`} onClick={() => setForm((current) => ({ ...current, credentials: current.credentials.filter((_, itemIndex) => itemIndex !== index) }))}>حذف</button>
+                    </div>
+                  </article>
                 ))}
-                <button type="button" onClick={() => setForm((current) => ({ ...current, credentials: [...current.credentials, { title: localized(), description: localized() }] }))}>افزودن صلاحیت</button>
+                <button className="admin-action-create" type="button" onClick={() => openDoctorRecord("credential")}>افزودن صلاحیت</button>
               </div>
             </Section>
 
-            <Section title="تصویر پزشک">
-              <div style={{ maxWidth: 260, display: "grid", gap: 10 }}>
-                <button type="button" onClick={() => setPicker("photo")}>انتخاب تصویر</button>
-                <MediaThumb media={photo} onRemove={() => update("photoMediaId", null)} />
-                {!photo && <Pill>تصویری انتخاب نشده</Pill>}
+            <Section className="doctor-portrait-card" title="تصویر پروفایل" description="تصویر واضح و حرفه‌ای، با کادر عمودی انتخاب کنید.">
+              <div className={`doctor-portrait-preview${photo ? " has-photo" : ""}`}>
+                {photo ? <MediaThumb media={photo} onRemove={() => update("photoMediaId", null)} /> : <div className="doctor-portrait-placeholder"><span>♙</span><strong>تصویر پزشک</strong><small>پیش‌نمایش تصویر پروفایل</small></div>}
               </div>
+              <button className="doctor-portrait-select" type="button" onClick={() => setPicker("photo")}>{photo ? "تغییر تصویر" : "＋ انتخاب تصویر"}</button>
             </Section>
           </>
         )}
@@ -581,8 +632,8 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
               <FieldGrid>
                 <label style={{ display: "grid", gap: 7 }}><span>نویسنده</span><select value={form.authorId} onChange={(e) => update("authorId", e.target.value)}><option value="">انتخاب نویسنده</option>{authors.map((author) => <option key={author._id} value={author._id}>{author.label}</option>)}</select></label>
                 <div style={{ display: "grid", gap: 8 }}><strong>دسته‌بندی‌ها</strong>{categories.length ? categories.map((category) => <label key={category._id} style={{ display: "flex", gap: 9, alignItems: "center" }}><input type="checkbox" checked={form.categoryIds.includes(category._id)} onChange={() => setForm((current) => ({ ...current, categoryIds: current.categoryIds.includes(category._id) ? current.categoryIds.filter((idValue) => idValue !== category._id) : [...current.categoryIds, category._id] }))} />{category.label}</label>) : <Pill>دسته‌ای وجود ندارد</Pill>}</div>
-                <label style={{ display: "grid", gap: 7 }}><span>تاریخ انتشار</span><input type="datetime-local" value={form.publishedAt} onChange={(e) => update("publishedAt", e.target.value)} /></label>
-                <label style={{ display: "grid", gap: 7 }}><span>زمان انتشار زمان‌بندی‌شده</span><input type="datetime-local" value={form.scheduledAt} onChange={(e) => update("scheduledAt", e.target.value)} /></label>
+                <PersianDatePicker mode="datetime" label="تاریخ و زمان انتشار" value={form.publishedAt} onChange={(value) => update("publishedAt", value)} />
+                <PersianDatePicker mode="datetime" label="زمان انتشار زمان‌بندی‌شده" value={form.scheduledAt} onChange={(value) => update("scheduledAt", value)} />
               </FieldGrid>
               <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                 <button type="button" onClick={() => setPicker("cover")}>انتخاب کاور مقاله</button>
@@ -603,7 +654,7 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
               <FieldGrid>
                 <label style={{ display: "grid", gap: 7 }}><span>پزشک مرتبط</span><select value={form.doctorId || ""} onChange={(e) => update("doctorId", e.target.value || null)}><option value="">بدون پزشک</option>{doctors.map((doctor) => <option key={doctor._id} value={doctor._id}>{doctor.label}</option>)}</select></label>
                 <div style={{ display: "grid", gap: 8 }}><strong>دسته‌بندی‌ها</strong>{categories.length ? categories.map((category) => <label key={category._id} style={{ display: "flex", gap: 9, alignItems: "center" }}><input type="checkbox" checked={form.categoryIds.includes(category._id)} onChange={() => setForm((current) => ({ ...current, categoryIds: current.categoryIds.includes(category._id) ? current.categoryIds.filter((idValue) => idValue !== category._id) : [...current.categoryIds, category._id] }))} />{category.label}</label>) : <Pill>دسته‌ای وجود ندارد</Pill>}</div>
-                <label style={{ display: "grid", gap: 7 }}><span>زمان انتشار</span><input type="datetime-local" value={form.publishedAt} onChange={(e) => update("publishedAt", e.target.value)} /></label>
+                <PersianDatePicker mode="datetime" label="تاریخ و زمان انتشار" value={form.publishedAt} onChange={(value) => update("publishedAt", value)} />
               </FieldGrid>
             </Section>
 
@@ -618,14 +669,14 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 12 }}>
                 {selectedBefore.map((item, index) => <div key={item._id}><MediaThumb media={item} onRemove={() => removeFromList("beforeMediaIds", item._id)} /><div style={{ display: "flex", gap: 5, marginTop: 6 }}><button type="button" disabled={index === 0} onClick={() => moveMedia("beforeMediaIds", index, -1)}>←</button><button type="button" disabled={index === selectedBefore.length - 1} onClick={() => moveMedia("beforeMediaIds", index, 1)}>→</button></div></div>)}
               </div>
-              <button type="button" onClick={() => setPicker("before")}>افزودن تصویر قبل از درمان</button>
+              <button className="admin-action-create" type="button" onClick={() => setPicker("before")}>افزودن تصویر قبل از درمان</button>
             </Section>
 
             <Section title="گالری بعد از درمان" description="این تصاویر در صفحه نمونه‌کار به‌عنوان نتیجه درمان نمایش داده می‌شوند.">
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 12 }}>
                 {selectedAfter.map((item, index) => <div key={item._id}><MediaThumb media={item} onRemove={() => removeFromList("afterMediaIds", item._id)} /><div style={{ display: "flex", gap: 5, marginTop: 6 }}><button type="button" disabled={index === 0} onClick={() => moveMedia("afterMediaIds", index, -1)}>←</button><button type="button" disabled={index === selectedAfter.length - 1} onClick={() => moveMedia("afterMediaIds", index, 1)}>→</button></div></div>)}
               </div>
-              <button type="button" onClick={() => setPicker("after")}>افزودن تصویر بعد از درمان</button>
+              <button className="admin-action-create" type="button" onClick={() => setPicker("after")}>افزودن تصویر بعد از درمان</button>
             </Section>
           </>
         )}
@@ -637,7 +688,7 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
           </Section>
         )}
 
-        <Section title="SEO" description="عنوان، توضیحات، canonical، Open Graph و robots برای هر زبان.">
+        <Section className={kind === "doctor" ? "doctor-seo-card" : undefined} title="SEO" description="عنوان، توضیحات، canonical، Open Graph و robots برای هر زبان." collapsible>
           <FieldGrid>
             <LocalizedField label="SEO title" value={form.seo.title} onChange={(value) => setForm((current) => ({ ...current, seo: { ...current.seo, title: value } }))} />
             <LocalizedField label="Meta description" value={form.seo.description} onChange={(value) => setForm((current) => ({ ...current, seo: { ...current.seo, description: value } }))} multiline />
@@ -657,34 +708,80 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
           </div>
         </Section>
 
-        <Section title="انتشار">
+        <Section className={kind === "doctor" ? "doctor-publish-card" : undefined} title="انتشار">
           <FieldGrid>
             <label style={{ display: "grid", gap: 7 }}><span>وضعیت</span><select value={form.status} onChange={(e) => update("status", e.target.value as FormState["status"])}><option value="draft">پیش‌نویس</option><option value="published">منتشرشده</option><option value="scheduled">زمان‌بندی‌شده</option><option value="archived">بایگانی</option></select></label>
-            {(kind === "doctor" || kind === "portfolio" || kind === "blog") && <label style={{ display: "grid", gap: 7 }}><span>زمان‌بندی انتشار</span><input type="datetime-local" value={form.scheduledAt} onChange={(e) => update("scheduledAt", e.target.value)} /></label>}
+            {(kind === "doctor" || kind === "portfolio" || kind === "blog") && <PersianDatePicker mode="datetime" label="زمان‌بندی انتشار" value={form.scheduledAt} onChange={(value) => update("scheduledAt", value)} />}
           </FieldGrid>
         </Section>
 
-        {error && <div style={{ padding: 12, borderRadius: 10, background: "#fff1f3", color: "#b42318" }}>{error}</div>}
-        {message && <div style={{ padding: 12, borderRadius: 10, background: "#ecfdf3", color: "#027a48" }}>{message}</div>}
-        <div style={{ position: "sticky", bottom: 12, display: "flex", justifyContent: "flex-start", gap: 10, padding: 12, border: "1px solid #e4e7ec", borderRadius: 14, background: "rgba(255,255,255,.94)", backdropFilter: "blur(8px)" }}>
-          <button disabled={saving} type="submit" style={{ background: "#111827", color: "#fff", border: 0, borderRadius: 10, padding: "11px 18px", fontWeight: 700 }}>{saving ? "در حال ذخیره…" : id ? "ذخیره تغییرات" : `ایجاد ${title}`}</button>
+        {error && <div className={kind === "doctor" ? "doctor-editor-error" : undefined} style={{ padding: 12, borderRadius: 10, background: "#fff1f3", color: "#b42318" }}>{error}</div>}
+        <div className={kind === "doctor" ? "doctor-editor-submit" : "content-editor-submit"} style={{ position: "sticky", bottom: 12, display: "flex", justifyContent: "flex-start", gap: 10, padding: 12, border: "1px solid #e4e7ec", borderRadius: 14, background: "rgba(255,255,255,.94)", backdropFilter: "blur(8px)" }}>
+          <button className={kind === "doctor" ? "doctor-save-button" : undefined} disabled={saving} type="submit" style={{ background: "#111827", color: "#fff", border: 0, borderRadius: 10, padding: "11px 18px", fontWeight: 700 }}>{saving ? "در حال ذخیره…" : id ? "ذخیره تغییرات" : `ایجاد ${title}`}</button>
           <Link href={`/admin/content/${base}`} style={{ padding: "10px 14px", border: "1px solid #d0d5dd", borderRadius: 10, background: "#fff" }}>انصراف</Link>
         </div>
       </form>
 
+      {recordEditor && (
+        <div className="doctor-record-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setRecordEditor(null); }}>
+          <section className="doctor-record-modal" role="dialog" aria-modal="true" aria-labelledby="doctor-record-modal-title" dir="rtl" onKeyDown={(event) => { if (event.key === "Escape" && picker === null) setRecordEditor(null); }}>
+            <header className="doctor-record-modal-header">
+              <div>
+                <span className="dashboard-eyebrow">{recordEditor.index === null ? "افزودن سابقه" : "ویرایش سابقه"}</span>
+                <h2 id="doctor-record-modal-title">
+                  {recordEditor.type === "certificate" ? "گواهی و مدرک" : recordEditor.type === "course" ? "دوره آموزشی" : "صلاحیت حرفه‌ای"}
+                </h2>
+              </div>
+              <button className="media-icon-button" type="button" aria-label="بستن" autoFocus onClick={() => setRecordEditor(null)}>×</button>
+            </header>
+            <div className="doctor-record-modal-content">
+              {recordEditor.type === "certificate" && (
+                <>
+                  <LocalizedField label="عنوان گواهی" value={recordEditor.value.title} onChange={(value) => setRecordEditor((current) => current?.type === "certificate" ? { ...current, value: { ...current.value, title: value } } : current)} />
+                  <LocalizedField label="صادرکننده" value={recordEditor.value.issuer} onChange={(value) => setRecordEditor((current) => current?.type === "certificate" ? { ...current, value: { ...current.value, issuer: value } } : current)} />
+                  <label className="doctor-record-modal-year"><span>سال دریافت</span><input inputMode="numeric" value={recordEditor.value.year} onChange={(event) => setRecordEditor((current) => current?.type === "certificate" ? { ...current, value: { ...current.value, year: event.target.value.replace(/\D/g, "").slice(0, 4) } } : current)} /></label>
+                  <div className="doctor-record-attachment">
+                    <div><strong>فایل مدرک</strong><span>{recordEditor.value.mediaId ? "فایل پیوست انتخاب شده" : "فایل یا تصویر گواهی را انتخاب کنید."}</span></div>
+                    <button type="button" onClick={() => setPicker("certificate")}>{recordEditor.value.mediaId ? "تغییر فایل" : "انتخاب فایل / تصویر"}</button>
+                    {recordEditor.value.mediaId && <button className="admin-action-danger" type="button" onClick={() => setRecordEditor((current) => current?.type === "certificate" ? { ...current, value: { ...current.value, mediaId: null } } : current)}>حذف پیوست</button>}
+                    {recordEditor.value.mediaId && <MediaThumb media={mediaById.get(recordEditor.value.mediaId)} />}
+                  </div>
+                </>
+              )}
+              {recordEditor.type === "course" && (
+                <>
+                  <LocalizedField label="عنوان دوره" value={recordEditor.value.title} onChange={(value) => setRecordEditor((current) => current?.type === "course" ? { ...current, value: { ...current.value, title: value } } : current)} />
+                  <LocalizedField label="برگزارکننده" value={recordEditor.value.provider} onChange={(value) => setRecordEditor((current) => current?.type === "course" ? { ...current, value: { ...current.value, provider: value } } : current)} />
+                  <label className="doctor-record-modal-year"><span>سال</span><input inputMode="numeric" value={recordEditor.value.year} onChange={(event) => setRecordEditor((current) => current?.type === "course" ? { ...current, value: { ...current.value, year: event.target.value.replace(/\D/g, "").slice(0, 4) } } : current)} /></label>
+                </>
+              )}
+              {recordEditor.type === "credential" && (
+                <>
+                  <LocalizedField label="عنوان صلاحیت / مجوز" value={recordEditor.value.title} onChange={(value) => setRecordEditor((current) => current?.type === "credential" ? { ...current, value: { ...current.value, title: value } } : current)} />
+                  <LocalizedField label="توضیحات" value={recordEditor.value.description} onChange={(value) => setRecordEditor((current) => current?.type === "credential" ? { ...current, value: { ...current.value, description: value } } : current)} multiline />
+                </>
+              )}
+              <div className="doctor-record-modal-actions">
+                <button className="doctor-save-button" type="button" onClick={saveDoctorRecord}>{recordEditor.index === null ? "افزودن به فهرست" : "ذخیره تغییرات"}</button>
+                <button className="admin-action-neutral" type="button" onClick={() => setRecordEditor(null)}>انصراف</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+
       <MediaPicker
         open={picker !== null}
         mode={picker === "certificate" ? "file" : "image"}
-        onClose={() => { setPicker(null); setEditingCertificate(null); }}
+        onClose={() => setPicker(null)}
         onSelect={(selected) => {
           if (picker === "photo") update("photoMediaId", selected._id);
           if (picker === "cover") update("coverMediaId", selected._id);
           if (picker === "before") addMedia("beforeMediaIds", selected._id);
           if (picker === "after") addMedia("afterMediaIds", selected._id);
           if (picker === "ogImage") setForm((current) => ({ ...current, seo: { ...current.seo, ogImageMediaId: selected._id } }));
-          if (picker === "certificate") insertCertificateMedia(selected._id);
+          if (picker === "certificate") setRecordEditor((current) => current?.type === "certificate" ? { ...current, value: { ...current.value, mediaId: selected._id } } : current);
           setPicker(null);
-          setEditingCertificate(null);
           setMedia((current) => current.some((item) => item._id === selected._id) ? current : [...current, { ...selected, alt: selected.alt ? { fa: selected.alt.fa || "", en: selected.alt.en || "" } : undefined, title: selected.title ? { fa: selected.title.fa || "", en: selected.title.en || "" } : undefined }]);
         }}
       />

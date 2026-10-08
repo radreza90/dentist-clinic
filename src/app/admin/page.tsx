@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const stats = [
   { label: "نوبت‌های امروز", value: "۲۸", meta: "+۱۲٪ نسبت به هفته قبل", icon: "▣", tone: "blue" },
   { label: "بیماران ثبت شده", value: "۱٬۲۴۶", meta: "+۸٫۴٪ این ماه", icon: "♧", tone: "green" },
@@ -76,7 +78,7 @@ export default function AdminDashboard() {
 
       <section className="dashboard-bottom-grid">
         <article className="glass-card table-card">
-          <div className="card-heading"><div><span className="card-kicker">برنامه امروز</span><h2>آخرین نوبت‌ها</h2></div><a href="/admin/appointments">مشاهده همه ←</a></div>
+          <div className="card-heading"><div><span className="card-kicker">برنامه امروز</span><h2>آخرین نوبت‌ها</h2></div><Link href="/admin/appointments">مشاهده همه ←</Link></div>
           <div className="dashboard-table-wrap">
             <table className="dashboard-table">
               <thead><tr><th>#</th><th>بیمار</th><th>پزشک</th><th>خدمت</th><th>زمان</th><th>وضعیت</th></tr></thead>

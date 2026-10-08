@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useAdminFeedback } from "@/components/admin/AdminFeedback";
 
 type Field={key:string;label:string;type:"text"|"password"|"url";required?:boolean;secret?:boolean;placeholder?:string};
 type Integration={
@@ -11,6 +12,7 @@ type Integration={
 };
 
 export default function IntegrationsAdmin(){
+  const {toast}=useAdminFeedback();
   const [items,setItems]=useState<Integration[]>([]);
   const [configs,setConfigs]=useState<Record<string,Record<string,string>>>({});
   const [testRecipients,setTestRecipients]=useState<Record<string,string>>({});
@@ -18,7 +20,6 @@ export default function IntegrationsAdmin(){
   const [saving,setSaving]=useState<string|null>(null);
   const [testing,setTesting]=useState<string|null>(null);
   const [smsTesting,setSmsTesting]=useState<string|null>(null);
-  const [message,setMessage]=useState("");
   const [error,setError]=useState("");
 
   async function load(){
@@ -48,7 +49,7 @@ export default function IntegrationsAdmin(){
   }
 
   async function save(item:Integration){
-    setSaving(item.id);setMessage("");setError("");
+    setSaving(item.id);setError("");
     try{
       const r=await fetch("/api/v1/admin/integrations/"+item.id,{
         method:"PUT",
@@ -61,7 +62,7 @@ export default function IntegrationsAdmin(){
       });
       const p=await r.json();
       if(!r.ok||!p.success)throw new Error(p.error?.message||"ذخیره ماژول ناموفق بود");
-      setMessage("تنظیمات "+(item.name?.fa||item.provider)+" ذخیره شد.");
+      toast("تنظیمات "+(item.name?.fa||item.provider)+" ذخیره شد.");
       await load();
     }catch(e){setError(e instanceof Error?e.message:"خطا");}
     finally{setSaving(null);}
@@ -80,12 +81,12 @@ export default function IntegrationsAdmin(){
   }
 
   async function testConnection(item:Integration){
-    setTesting(item.id);setMessage("");setError("");
+    setTesting(item.id);setError("");
     try{
       const r=await fetch("/api/v1/admin/integrations/"+item.id+"/test",{method:"POST"});
       const p=await r.json();
       if(!r.ok||!p.success)throw new Error(p.error?.message||"بررسی اتصال ناموفق بود");
-      setMessage(p.data?.message||"اتصال بررسی شد.");
+      toast(p.data?.message||"اتصال بررسی شد.");
       await load();
     }catch(e){setError(e instanceof Error?e.message:"بررسی ناموفق بود");await load();}
     finally{setTesting(null);}
@@ -98,7 +99,7 @@ export default function IntegrationsAdmin(){
       return;
     }
 
-    setSmsTesting(item.id);setMessage("");setError("");
+    setSmsTesting(item.id);setError("");
     try{
       const r=await fetch("/api/v1/admin/integrations/"+item.id+"/sms-test",{
         method:"POST",
@@ -107,7 +108,7 @@ export default function IntegrationsAdmin(){
       });
       const p=await r.json();
       if(!r.ok||!p.success)throw new Error(p.error?.message||"ارسال پیامک تستی ناموفق بود");
-      setMessage(p.data?.message||"پیامک تستی ارسال شد.");
+      toast(p.data?.message||"پیامک تستی ارسال شد.");
       await load();
     }catch(e){setError(e instanceof Error?e.message:"ارسال پیامک تستی ناموفق بود");await load();}
     finally{setSmsTesting(null);}
@@ -119,7 +120,7 @@ export default function IntegrationsAdmin(){
         <div><h2 style={{margin:"0 0 6px"}}>{item.name.fa||item.provider}</h2><p style={{margin:0,color:"#666"}}>{item.description?.fa||""}</p><small dir="ltr">{item.provider}</small></div>
         <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
           <label><input type="checkbox" checked={item.enabled} onChange={e=>void toggle(item,e.target.checked)}/> فعال</label>
-          <button type="button" onClick={()=>void makeDefault(item)} disabled={!item.enabled}>{item.isDefault?"پیش‌فرض":"انتخاب به‌عنوان پیش‌فرض"}</button>
+          <button className="admin-action-create" type="button" onClick={()=>void makeDefault(item)} disabled={!item.enabled}>{item.isDefault?"پیش‌فرض":"انتخاب به‌عنوان پیش‌فرض"}</button>
         </div>
       </div>
 
@@ -149,14 +150,14 @@ export default function IntegrationsAdmin(){
           dir="ltr"
           inputMode="tel"
         />
-        <button type="button" onClick={()=>void sendSmsTest(item)} disabled={smsTesting===item.id||!item.enabled}>
+        <button className="admin-action-warning" type="button" onClick={()=>void sendSmsTest(item)} disabled={smsTesting===item.id||!item.enabled}>
           {smsTesting===item.id?"در حال ارسال…":"ارسال پیامک تستی"}
         </button>
       </div>}
 
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-        <button type="button" onClick={()=>void save(item)} disabled={saving===item.id}>{saving===item.id?"در حال ذخیره…":"ذخیره تنظیمات"}</button>
-        <button type="button" onClick={()=>void testConnection(item)} disabled={testing===item.id}>{testing===item.id?"در حال بررسی…":"بررسی اتصال بدون ارسال"}</button>
+        <button className="admin-action-success" type="button" onClick={()=>void save(item)} disabled={saving===item.id}>{saving===item.id?"در حال ذخیره…":"ذخیره تنظیمات"}</button>
+        <button className="admin-action-neutral" type="button" onClick={()=>void testConnection(item)} disabled={testing===item.id}>{testing===item.id?"در حال بررسی…":"بررسی اتصال بدون ارسال"}</button>
       </div>
 
       {item.lastTestAt&&<small style={{color:item.lastTestOk?"green":"#b42318"}}>{item.lastTestMessage||"نتیجه آخرین بررسی"} · {new Date(item.lastTestAt).toLocaleString("fa-IR")}</small>}
@@ -168,7 +169,6 @@ export default function IntegrationsAdmin(){
   return <main>
     <h1>ماژول‌ها</h1>
     <p style={{color:"#666",maxWidth:900}}>درگاه پرداخت و سرویس پیامک از این بخش مدیریت می‌شوند. تنظیمات provider در دیتابیس ذخیره و credentialهای حساس رمزنگاری می‌شوند. فعال‌سازی هر ماژول و انتخاب provider پیش‌فرض کاملاً مستقل از کد نوبت‌دهی است.</p>
-    {message&&<p style={{color:"green"}}>{message}</p>}
     {error&&<p style={{color:"#b42318"}}>{error}</p>}
 
     <section style={{display:"grid",gap:16,marginTop:24}}>
