@@ -60,6 +60,7 @@ type FormState = {
   publishedAt: string;
   scheduledAt: string;
   seo: SeoForm;
+  commentSettings: { enabled: boolean; allowRating: boolean };
 };
 
 type Option = { _id: string; label: string };
@@ -109,6 +110,7 @@ const emptyForm = (kind: Kind): FormState => ({
   publishedAt: "",
   scheduledAt: "",
   seo: seo(),
+  commentSettings: { enabled: false, allowRating: kind === "doctor" || kind === "portfolio" },
 });
 
 function pickLabel(item: Record<string, unknown>) {
@@ -362,6 +364,10 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
             twitterCard: rawSeo?.twitterCard === "summary" ? "summary" : "summary_large_image",
           },
           kind,
+          commentSettings: {
+            enabled: (data.commentSettings as { enabled?: boolean } | undefined)?.enabled === true,
+            allowRating: (data.commentSettings as { allowRating?: boolean } | undefined)?.allowRating === true,
+          },
         });
       })
       .catch((e) => setError(e instanceof Error ? e.message : "خطا در دریافت محتوا"))
@@ -416,6 +422,7 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
         body.services = form.services;
         body.publishedAt = fromLocalDateTime(form.publishedAt);
         body.scheduledAt = fromLocalDateTime(form.scheduledAt);
+        body.commentSettings = form.commentSettings;
       } else if (kind === "blog") {
         body.title = form.title;
         body.excerpt = form.excerpt;
@@ -425,6 +432,7 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
         body.authorId = form.authorId || undefined;
         body.publishedAt = fromLocalDateTime(form.publishedAt);
         body.scheduledAt = fromLocalDateTime(form.scheduledAt);
+        body.commentSettings = form.commentSettings;
       } else if (kind === "portfolio") {
         body.title = form.title;
         body.description = form.description;
@@ -436,10 +444,12 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
         body.privacy = form.privacy;
         body.scheduledAt = fromLocalDateTime(form.scheduledAt);
         body.publishedAt = fromLocalDateTime(form.publishedAt);
+        body.commentSettings = form.commentSettings;
       } else {
         body.title = form.title;
         body.excerpt = form.excerpt;
         body.content = form.content;
+        body.commentSettings = form.commentSettings;
       }
 
       const response = await fetch(id ? `${endpoint}/${id}` : endpoint, {
@@ -687,6 +697,20 @@ export function ContentEditor({ kind, title, endpoint, id }: { kind: Kind; title
             <LocalizedField label="محتوا" value={form.content} onChange={(value) => update("content", value)} rich />
           </Section>
         )}
+
+
+        <Section title="دیدگاه کاربران" description="امکان ارسال دیدگاه را برای این محتوا فعال یا غیرفعال کنید. همه دیدگاه‌ها ابتدا برای بررسی مدیر ثبت می‌شوند.">
+          <label style={{ display: "flex", gap: 10, alignItems: "center", fontWeight: 700 }}>
+            <input type="checkbox" checked={form.commentSettings.enabled} onChange={(e) => setForm((current) => ({ ...current, commentSettings: { ...current.commentSettings, enabled: e.target.checked } }))} />
+            ارسال دیدگاه برای این محتوا فعال باشد
+          </label>
+          {(kind === "doctor" || kind === "portfolio") && (
+            <label style={{ display: "flex", gap: 10, alignItems: "center", color: "#667085" }}>
+              <input type="checkbox" checked={form.commentSettings.allowRating} onChange={(e) => setForm((current) => ({ ...current, commentSettings: { ...current.commentSettings, allowRating: e.target.checked } }))} />
+              امکان ثبت امتیاز ۱ تا ۵
+            </label>
+          )}
+        </Section>
 
         <Section className={kind === "doctor" ? "doctor-seo-card" : undefined} title="SEO" description="عنوان، توضیحات، canonical، Open Graph و robots برای هر زبان." collapsible>
           <FieldGrid>

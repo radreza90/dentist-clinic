@@ -5,7 +5,7 @@ import { getAuth, can } from "@/lib/rbac";
 import { ok, fail } from "@/lib/api";
 import { sanitizeLocalizedHtml } from "@/lib/sanitize";
 import { z } from "zod";
-import { seoInput } from "@/lib/validators";
+import { seoInput, commentSettingsInput } from "@/lib/validators";
 
 const localized=z.object({fa:z.string().max(5000).optional().default(""),en:z.string().max(5000).optional().default("")});
 const text=z.object({fa:z.string().max(100000).optional(),en:z.string().max(100000).optional()});
@@ -16,7 +16,7 @@ const doctorInput=z.object({
   slug:z.string().trim().min(1).max(160),name:localized,shortBio:text.optional(),bio:text.optional(),
   photoMediaId:z.string().optional().nullable(),cv:text.optional(),university:localized.optional(),
   certificates:z.array(certificate).optional(),courses:z.array(course).optional(),credentials:z.array(credential).optional(),
-  services:z.array(z.string()).optional(),seo:seoInput.optional(),
+  services:z.array(z.string()).optional(),commentSettings:commentSettingsInput.optional(),seo:seoInput.optional(),
   status:z.enum(["draft","published","scheduled","archived"]).optional(),
   publishedAt:z.coerce.date().nullable().optional(),scheduledAt:z.coerce.date().nullable().optional()
 });

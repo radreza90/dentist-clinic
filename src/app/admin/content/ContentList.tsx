@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Pagination } from "@/components/admin/Pagination";
 import { useAdminFeedback } from "@/components/admin/AdminFeedback";
 
-type Item={_id:string;slug:string;title?:{fa?:string;en?:string};name?:{fa?:string;en?:string};status?:string;categoryIds?:string[]};
+type Item={_id:string;slug:string;title?:{fa?:string;en?:string};name?:{fa?:string;en?:string};status?:string;categoryIds?:string[];commentSettings?:{enabled?:boolean}};
 type Category={_id:string;name?:{fa?:string;en?:string};slug:string};
 type ListResponse={items:Item[];pagination:{page:number;limit:number;total:number;pages:number}};
 
@@ -91,10 +91,11 @@ export function ContentList({title,endpoint,archive=true,createHref,editBase,cat
     <section className="content-list-table-wrap">
       {loading?<div className="content-list-state">در حال بارگذاری {title}…</div>:items.length===0?<div className="content-list-state"><strong>موردی پیدا نشد</strong><span>فیلترها را تغییر دهید یا یک مورد جدید اضافه کنید.</span></div>:
         <div className="content-list-scroll"><table className="content-list-table">
-          <thead><tr><th>عنوان</th><th>نشانی</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+          <thead><tr><th>عنوان</th><th>نشانی</th><th>وضعیت</th><th>دیدگاه</th><th>عملیات</th></tr></thead>
           <tbody>{items.map(item=><tr key={item._id}>
             <td><strong>{item.title?.fa||item.name?.fa||item.title?.en||item.name?.en||"بدون عنوان"}</strong></td>
             <td dir="ltr"><code>/{item.slug}</code></td>
+            <td><span className={`content-comments-badge ${item.commentSettings?.enabled ? "is-enabled" : ""}`}>{item.commentSettings?.enabled ? "فعال" : "خاموش"}</span></td>
             <td><span className={`content-status-badge status-${item.status||"draft"}`}>{({draft:"پیش‌نویس",published:"منتشرشده",scheduled:"زمان‌بندی‌شده",archived:"بایگانی"} as Record<string,string>)[item.status||"draft"]||item.status||"—"}</span></td>
             <td><div className="content-row-actions">
               {editBase&&<Link className="admin-action-neutral" href={`${editBase}/${item._id}`}>ویرایش</Link>}

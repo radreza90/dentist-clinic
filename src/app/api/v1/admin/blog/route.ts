@@ -5,10 +5,10 @@ import { getAuth,can } from "@/lib/rbac";
 import { ok,fail } from "@/lib/api";
 import { sanitizeLocalizedHtml } from "@/lib/sanitize";
 import { z } from "zod";
-import { seoInput } from "@/lib/validators";
+import { seoInput, commentSettingsInput } from "@/lib/validators";
 const localized=z.object({fa:z.string().max(5000).optional().default(""),en:z.string().max(5000).optional().default("")});
 const text=z.object({fa:z.string().max(100000).optional(),en:z.string().max(100000).optional()});
-const input=z.object({slug:z.string().trim().min(1).max(160),title:localized,excerpt:text.optional(),content:text.optional(),categoryIds:z.array(z.string()).optional(),coverMediaId:z.string().nullable().optional(),seo:seoInput.optional(),status:z.enum(["draft","published","scheduled","archived"]).optional(),publishedAt:z.coerce.date().nullable().optional(),scheduledAt:z.coerce.date().nullable().optional(),authorId:z.string().optional()});
+const input=z.object({slug:z.string().trim().min(1).max(160),title:localized,excerpt:text.optional(),content:text.optional(),categoryIds:z.array(z.string()).optional(),coverMediaId:z.string().nullable().optional(),commentSettings:commentSettingsInput.optional(),seo:seoInput.optional(),status:z.enum(["draft","published","scheduled","archived"]).optional(),publishedAt:z.coerce.date().nullable().optional(),scheduledAt:z.coerce.date().nullable().optional(),authorId:z.string().optional()});
 function sanitizePost(data:z.infer<typeof input>){return {...data,excerpt:data.excerpt?sanitizeLocalizedHtml(data.excerpt):undefined,content:data.content?sanitizeLocalizedHtml(data.content):undefined};}
 export async function GET(req:Request){return listContent(req,BlogPostModel,{categoryField:"categoryIds"});}
 export async function POST(req:Request){

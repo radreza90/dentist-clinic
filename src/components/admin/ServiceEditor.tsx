@@ -9,10 +9,11 @@ import { MediaPicker } from "@/components/editor/MediaPicker";
 import { useAdminFeedback } from "@/components/admin/AdminFeedback";
 
 type Localized={fa:string;en:string};
-type ServiceForm={slug:string;title:Localized;excerpt:Localized;content:Localized;suitableFor:Localized;benefits:Localized;limitations:Localized;careInstructions:Localized;faqs:{question:Localized;answer:Localized}[];bookingFee:number;currency:string;coverMediaId:string|null;status:string;seo:{title:Localized;description:Localized;canonical:Localized;keywords:string;index:boolean;follow:boolean}};
+type ServiceForm={slug:string;title:Localized;excerpt:Localized;content:Localized;suitableFor:Localized;benefits:Localized;limitations:Localized;careInstructions:Localized;faqs:{question:Localized;answer:Localized}[];bookingFee:number;currency:string;coverMediaId:string|null;status:string;commentSettings:{enabled:boolean;allowRating:boolean};seo:{title:Localized;description:Localized;canonical:Localized;keywords:string;index:boolean;follow:boolean}};
 
 const empty:ServiceForm={
   slug:"",title:{fa:"",en:""},excerpt:{fa:"",en:""},content:{fa:"",en:""},suitableFor:{fa:"",en:""},benefits:{fa:"",en:""},limitations:{fa:"",en:""},careInstructions:{fa:"",en:""},faqs:[],bookingFee:0,currency:"IRR",coverMediaId:null,status:"draft",
+  commentSettings:{enabled:false,allowRating:true},
   seo:{title:{fa:"",en:""},description:{fa:"",en:""},canonical:{fa:"",en:""},keywords:"",index:true,follow:true}
 };
 
@@ -65,6 +66,7 @@ export function ServiceEditor({id}:{id?:string}){
         currency:d.currency||"IRR",
         coverMediaId:d.coverMediaId?String(d.coverMediaId):null,
         status:d.status||"draft",
+        commentSettings:{enabled:d.commentSettings?.enabled===true,allowRating:d.commentSettings?.allowRating===true},
         seo:{
           title:d.seo?.title||{fa:"",en:""},
           description:d.seo?.description||{fa:"",en:""},
@@ -142,6 +144,16 @@ export function ServiceEditor({id}:{id?:string}){
             </div>)}
             <button className="admin-action-create" type="button" onClick={()=>setForm({...form,faqs:[...form.faqs,{question:{fa:"",en:""},answer:{fa:"",en:""}}]})}>افزودن سؤال متداول</button>
           </div>
+        </div>
+      </details>
+
+
+      <details>
+        <summary style={{cursor:"pointer",fontWeight:700}}>دیدگاه کاربران</summary>
+        <div style={{display:"grid",gap:12,paddingTop:14}}>
+          <label style={{display:"flex",gap:10,alignItems:"center"}}><input type="checkbox" checked={form.commentSettings.enabled} onChange={e=>setForm({...form,commentSettings:{...form.commentSettings,enabled:e.target.checked}})}/> ارسال دیدگاه برای این خدمت فعال باشد</label>
+          <label style={{display:"flex",gap:10,alignItems:"center"}}><input type="checkbox" checked={form.commentSettings.allowRating} onChange={e=>setForm({...form,commentSettings:{...form.commentSettings,allowRating:e.target.checked}})}/> امکان ثبت امتیاز ۱ تا ۵ برای این خدمت</label>
+          <small style={{color:"#667085"}}>همه دیدگاه‌ها ابتدا نیازمند بررسی و تأیید مدیر هستند.</small>
         </div>
       </details>
 
