@@ -26,6 +26,9 @@ export async function GET(req:Request){
     const targetId=url.searchParams.get("targetId")||"";
     if(!Types.ObjectId.isValid(targetId)) return fail("شناسه محتوا نامعتبر است.",422);
     await connectDB();
+    const Model=targetModels[targetType];
+    const target=await Model.findOne({_id:targetId,status:"published"}).lean();
+    if(!target || (target as any).commentSettings?.enabled!==true) return fail("دیدگاه برای این محتوا در دسترس نیست.",404);
     const items=await CommentModel.find({targetType,targetId,status:"approved"}).sort({createdAt:-1}).limit(100).lean();
     return ok(items);
   }catch(e){return fail(e instanceof Error?e.message:"خطا در دریافت دیدگاه‌ها",400);}

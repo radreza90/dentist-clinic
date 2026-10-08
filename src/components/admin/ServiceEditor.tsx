@@ -66,7 +66,7 @@ export function ServiceEditor({id}:{id?:string}){
         currency:d.currency||"IRR",
         coverMediaId:d.coverMediaId?String(d.coverMediaId):null,
         status:d.status||"draft",
-        commentSettings:{enabled:d.commentSettings?.enabled===true,allowRating:d.commentSettings?.allowRating===true},
+        commentSettings:{enabled:d.commentSettings?.enabled===true,allowRating:d.commentSettings?.allowRating !== false},
         seo:{
           title:d.seo?.title||{fa:"",en:""},
           description:d.seo?.description||{fa:"",en:""},
